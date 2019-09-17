@@ -54,15 +54,16 @@ static const struct fan_config_p fan_sys_reg[FAN_COUNT + 1] = {
 static const struct led_reg_mapper led_mapper[LED_COUNT + 1] = {
     {},
     {"LED_SYSTEM", LED_SYSTEM_H, LED_SYSTEM_REGISTER},
+    {"LED_ALARM", LED_ALARM_H, ALARM_REGISTER},
+    {"LED_PSU", LED_PSU_H, PSU_LED_REGISTER},
+    {"LED_FAN",LED_FAN_H,LED_FAN_REGISTER},
     {"LED_FAN_1", LED_FAN_1_H, 0x24},
     {"LED_FAN_2", LED_FAN_2_H, 0x34},
     {"LED_FAN_3", LED_FAN_3_H, 0x44},
     {"LED_FAN_4", LED_FAN_4_H, 0x54},
     {"LED_FAN_5", LED_FAN_5_H, 0x64},
     {"LED_FAN_6", LED_FAN_6_H, 0x74},
-    {"LED_FAN_7", LED_FAN_7_H, 0x84},
-    {"LED_ALARM", LED_ALARM_H, ALARM_REGISTER},
-    {"LED_PSU", LED_PSU_H, PSU_LED_REGISTER}
+    {"LED_FAN_7", LED_FAN_7_H, 0x84}
 };
 
 static const struct psu_reg_bit_mapper psu_mapper [PSU_COUNT + 1] = {
@@ -258,7 +259,7 @@ uint8_t getLEDStatus(int id)
         uint8_t result = 0;
         uint16_t led_stat_reg;
         led_stat_reg = led_mapper[id].dev_reg;
-        if(id >=2 && id <= 8){
+        if(id >=5 && id <= 11){
             fan_cpld_read_reg(led_stat_reg,&result);
         }else{
             result = read_register(led_stat_reg);
