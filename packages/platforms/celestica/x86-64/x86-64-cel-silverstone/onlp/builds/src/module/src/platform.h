@@ -20,7 +20,7 @@
 #define ALARM_REGISTER 0xA163
 
 //LED
-#define LED_COUNT   11
+#define LED_COUNT   10
 
 #define LED_SYSTEM_H  1
 #define LED_SYSTEM_REGISTER 0xA162
@@ -39,8 +39,7 @@
 #define LED_FAN_6_H   7
 #define LED_FAN_7_H   8
 #define LED_ALARM_H   9
-#define LED_PSU_L_H   10
-#define LED_PSU_R_H   11
+#define LED_PSU_H   10
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
 #define ONLP_SENSOR_CACHE_SHARED "/onlp-sensor-cache-shared"

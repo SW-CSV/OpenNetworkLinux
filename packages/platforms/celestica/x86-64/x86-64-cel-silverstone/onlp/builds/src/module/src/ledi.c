@@ -5,11 +5,6 @@
 #include <fcntl.h>
 #include "platform.h"
 
-static const struct psu_reg_bit_mapper psu_mapper[PSU_COUNT + 1] = {
-    {},
-    {0xa160, 3, 7, 1},
-    {0xa160, 2, 6, 0},
-};
 
 uint8_t psu_status_l = 0;
 uint8_t psu_led_result = 0xFF;
@@ -26,8 +21,7 @@ enum onlp_led_id
     LED_FAN_6,
     LED_FAN_7,
     LED_ALARM,
-    LED_LEFT_PSU,
-    LED_RIGHT_PSU
+    LED_PSU
 
 };
 
@@ -38,7 +32,7 @@ static onlp_led_info_t led_info[] =
 {
     { },
     {
-        { ONLP_LED_ID_CREATE(LED_SYSTEM), "Chassis System LED(DIAG LED)", 0 },
+        { ONLP_LED_ID_CREATE(LED_SYSTEM), "System LED (Front)", 0 },
         ONLP_LED_STATUS_PRESENT,
         ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_YELLOW_BLINKING | ONLP_LED_CAPS_GREEN | 
         ONLP_LED_CAPS_GREEN_BLINKING | ONLP_LED_CAPS_AUTO,
@@ -79,20 +73,15 @@ static onlp_led_info_t led_info[] =
         ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_RED |  ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_AUTO,
     },
     {
-        { ONLP_LED_ID_CREATE(LED_ALARM), "Alert LED", 0 },
+        { ONLP_LED_ID_CREATE(LED_ALARM), "Alert LED (Front)", 0 },
         ONLP_LED_STATUS_PRESENT,
         ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_YELLOW_BLINKING | ONLP_LED_CAPS_GREEN | 
         ONLP_LED_CAPS_GREEN_BLINKING,
     },
     {
-        { ONLP_LED_ID_CREATE(LED_LEFT_PSU), "Left PSU LED", 0 },
+        { ONLP_LED_ID_CREATE(LED_PSU), "PSU LED (Front)", 0 },
         ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_ORANGE,
-    },
-    {
-        { ONLP_LED_ID_CREATE(LED_RIGHT_PSU), "Right PSU LED", 0 },
-        ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_ORANGE,
+        ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_ORANGE | ONLP_LED_CAPS_GREEN,
     },
 };
 
@@ -108,8 +97,8 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
     int led_id;
     uint8_t led_color = 0;
     uint8_t blink_status = 0;
+    uint8_t hw_control_status = 0;
     uint8_t result = 0;
-    int present_status=0;
 
     led_id = ONLP_OID_ID_GET(id);
     *info_p = led_info[led_id];
@@ -126,8 +115,7 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
             result = getLEDStatus(led_id);
             break;
         
-        case LED_LEFT_PSU:
-        case LED_RIGHT_PSU:
+        case LED_PSU:
             if(psu_led_result == 0xFF)
                 psu_led_result = getLEDStatus(led_id);
             break;
@@ -192,38 +180,20 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
                 info_p->mode |= ONLP_LED_MODE_AUTO;
             }
             break;
-        case LED_LEFT_PSU:
-            psu_id = 1;
-            present_status = (psu_status_l >> psu_mapper[psu_id].bit_present) & 0x01;
+        case LED_PSU:
+            hw_control_status = (psu_led_result >> 4) & 0x1;
             led_color = psu_led_result & 0x1;
-            if(!present_status)
+            if(!hw_control_status)
             {
                 if(led_color == 1){
-                    info_p->mode |= ONLP_LED_MODE_ORANGE;
+                    info_p->mode = ONLP_LED_MODE_ORANGE;
                 }else{
-                    info_p->mode |= ONLP_LED_MODE_GREEN;
+                    info_p->mode = ONLP_LED_MODE_GREEN;
                 }
             }else{
-                info_p->mode = ONLP_LED_STATUS_FAILED;
+                info_p->mode = ONLP_LED_MODE_AUTO;
             }
             break;
-        case LED_RIGHT_PSU:
-            psu_id = 2;
-            present_status = (psu_status_l >> psu_mapper[psu_id].bit_present) & 0x01;
-            led_color = psu_led_result & 0x1;
-            if(!present_status)
-            {
-                if(led_color == 1){
-                    info_p->mode |= ONLP_LED_MODE_ORANGE;
-                }else{
-                    info_p->mode |= ONLP_LED_MODE_GREEN;
-                }
-                break;
-            }else{
-                info_p->status = ONLP_LED_STATUS_FAILED;
-            }
-            break;
-        
     }
     return ONLP_STATUS_OK;
 }
