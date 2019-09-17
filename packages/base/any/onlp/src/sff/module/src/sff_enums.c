@@ -166,6 +166,10 @@ aim_map_si_t sff_module_type_map[] =
     { "100_BASE_LX", SFF_MODULE_TYPE_100_BASE_LX },
     { "100_BASE_FX", SFF_MODULE_TYPE_100_BASE_FX },
     { "4X_MUX", SFF_MODULE_TYPE_4X_MUX },
+    /* QSFP-DD support */
+	{ "400GAUI_16_C2M", SFF_MODULE_TYPE_400GAUI_16_C2M },
+	{ "400GAUI_8_C2M", SFF_MODULE_TYPE_400GAUI_8_C2M },
+	{ "400G_CR8", SFF_MODULE_TYPE_400G_CR8 },
     { NULL, 0 }
 };
 
@@ -206,6 +210,10 @@ aim_map_si_t sff_module_type_desc_map[] =
     { "100BASE-LX", SFF_MODULE_TYPE_100_BASE_LX },
     { "100BASE-FX", SFF_MODULE_TYPE_100_BASE_FX },
     { "4X-MUX", SFF_MODULE_TYPE_4X_MUX },
+    /* QSFP-DD support */
+	{ "400GAUI_16_C2M", SFF_MODULE_TYPE_400GAUI_16_C2M },
+	{ "400GAUI_8_C2M", SFF_MODULE_TYPE_400GAUI_8_C2M },
+	{ "400G_CR8", SFF_MODULE_TYPE_400G_CR8 },
     { NULL, 0 }
 };
 
@@ -256,6 +264,7 @@ aim_map_si_t sff_sfp_type_map[] =
     { "QSFP_PLUS", SFF_SFP_TYPE_QSFP_PLUS },
     { "QSFP28", SFF_SFP_TYPE_QSFP28 },
     { "SFP28", SFF_SFP_TYPE_SFP28 },
+    { "QSFP-DD", SFF_SFF_TYPE_QSFP_DD },
     { NULL, 0 }
 };
 
@@ -266,6 +275,7 @@ aim_map_si_t sff_sfp_type_desc_map[] =
     { "QSFP+", SFF_SFP_TYPE_QSFP_PLUS },
     { "QSFP28", SFF_SFP_TYPE_QSFP28 },
     { "SFP28", SFF_SFP_TYPE_SFP28 },
+    { "QSFP-DD", SFF_SFF_TYPE_QSFP_DD },
     { NULL, 0 }
 };
 

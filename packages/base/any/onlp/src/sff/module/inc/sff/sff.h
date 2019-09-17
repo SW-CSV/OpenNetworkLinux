@@ -72,6 +72,7 @@ typedef enum sff_module_caps_e {
     SFF_MODULE_CAPS_F_25G = 8,
     SFF_MODULE_CAPS_F_40G = 16,
     SFF_MODULE_CAPS_F_100G = 32,
+    SFF_MODULE_CAPS_F_400G = 64,
 } sff_module_caps_t;
 
 /** Enum names. */
@@ -132,7 +133,11 @@ typedef enum sff_module_type_e {
     SFF_MODULE_TYPE_100_BASE_LX,
     SFF_MODULE_TYPE_100_BASE_FX,
     SFF_MODULE_TYPE_4X_MUX,
-    SFF_MODULE_TYPE_LAST = SFF_MODULE_TYPE_4X_MUX,
+    /* QSFP-DD support */
+    SFF_MODULE_TYPE_400GAUI_16_C2M,
+    SFF_MODULE_TYPE_400GAUI_8_C2M,
+    SFF_MODULE_TYPE_400G_CR8,
+    SFF_MODULE_TYPE_LAST = SFF_MODULE_TYPE_400G_CR8,
     SFF_MODULE_TYPE_COUNT,
     SFF_MODULE_TYPE_INVALID = -1,
 } sff_module_type_t;
@@ -201,7 +206,8 @@ typedef enum sff_sfp_type_e {
     SFF_SFP_TYPE_QSFP_PLUS,
     SFF_SFP_TYPE_QSFP28,
     SFF_SFP_TYPE_SFP28,
-    SFF_SFP_TYPE_LAST = SFF_SFP_TYPE_SFP28,
+    SFF_SFF_TYPE_QSFP_DD,
+    SFF_SFP_TYPE_LAST = SFF_SFF_TYPE_QSFP_DD,
     SFF_SFP_TYPE_COUNT,
     SFF_SFP_TYPE_INVALID = -1,
 } sff_sfp_type_t;
@@ -214,6 +220,7 @@ typedef enum sff_sfp_type_e {
     "QSFP_PLUS", \
     "QSFP28", \
     "SFP28", \
+    "QSFP-DD", \
 }
 /** Enum names. */
 const char* sff_sfp_type_name(sff_sfp_type_t e);
