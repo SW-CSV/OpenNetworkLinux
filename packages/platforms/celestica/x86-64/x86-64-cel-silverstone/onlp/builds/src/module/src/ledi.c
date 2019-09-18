@@ -15,14 +15,7 @@ enum onlp_led_id
     LED_SYSTEM,
     LED_ALARM,
     LED_PSU,
-    LED_FAN,
-    LED_FAN_1,
-    LED_FAN_2,
-    LED_FAN_3,
-    LED_FAN_4,
-    LED_FAN_5,
-    LED_FAN_6,
-    LED_FAN_7
+    LED_FAN
 };
 
 /*
@@ -52,41 +45,6 @@ static onlp_led_info_t led_info[] =
         { ONLP_LED_ID_CREATE(LED_FAN), "FAN LED (Front)", 0 },
         ONLP_LED_STATUS_PRESENT,
         ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_ORANGE | ONLP_LED_CAPS_GREEN,
-    },
-    {
-        { ONLP_LED_ID_CREATE(LED_FAN_1), "FAN(1) LED", 0 },
-        ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_RED |  ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_AUTO,
-    },
-    {
-        { ONLP_LED_ID_CREATE(LED_FAN_2), "FAN(2) LED", 0 },
-        ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_RED |  ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_AUTO,
-    },
-    {
-        { ONLP_LED_ID_CREATE(LED_FAN_3), "FAN(3) LED", 0 },
-        ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_RED |  ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_AUTO,
-    },
-    {
-        { ONLP_LED_ID_CREATE(LED_FAN_4), "FAN(4) LED", 0 },
-        ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_RED |  ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_AUTO,
-    },
-    {
-        { ONLP_LED_ID_CREATE(LED_FAN_5), "FAN(5) LED", 0 },
-        ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_RED |  ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_AUTO,
-    },
-    {
-        { ONLP_LED_ID_CREATE(LED_FAN_6), "FAN(6) LED", 0 },
-        ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_RED |  ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_AUTO,
-    },
-    {
-        { ONLP_LED_ID_CREATE(LED_FAN_7), "FAN(7) LED", 0 },
-        ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_RED |  ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_AUTO,
     }
 };
 
@@ -141,26 +99,6 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
                 info_p->mode = current_mode+1;
             }
 
-            break;
-        case LED_FAN_1:
-        case LED_FAN_2:
-        case LED_FAN_3:
-        case LED_FAN_4:
-        case LED_FAN_5:
-        case LED_FAN_6:
-        case LED_FAN_7:
-
-            led_color = result & 0x3;
-
-            if(led_color == 3){
-                info_p->mode |= ONLP_LED_MODE_OFF;
-            }else if(led_color == 1){
-                info_p->mode |= ONLP_LED_MODE_GREEN;
-            }else if(led_color == 2){
-                info_p->mode |= ONLP_LED_MODE_RED;
-            }else if(led_color == 0){
-                info_p->mode |= ONLP_LED_MODE_AUTO;
-            }
             break;
         case LED_PSU:
         case LED_FAN:
