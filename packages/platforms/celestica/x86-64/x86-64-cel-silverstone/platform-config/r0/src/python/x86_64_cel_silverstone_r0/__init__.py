@@ -59,6 +59,13 @@ class OnlPlatform_x86_64_cel_silverstone_r0(OnlPlatformCelestica,
                 f.write("{0}\r\n".format(onlp_interval_time))
             f.close()
         
+        #Prevent ONL take a long waiting time at Waiting for /dev to be fully populated... step when boot-up
+        rulefilepath = "/etc/udev/rules.d/70-persistent-net.rules"
+        if os.path.exists(rulefilepath):
+            os.system("rm {0}".format(rulefilepath))
+        else:
+            pass
+        
         #initialize onlp cache files
         print("Initialize ONLP Cache files")
         os.system("ipmitool sdr > /tmp/onlp-sensor-cache.txt")
