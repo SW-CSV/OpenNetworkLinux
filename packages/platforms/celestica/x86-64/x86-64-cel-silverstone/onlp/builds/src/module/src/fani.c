@@ -54,7 +54,7 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
     *info_p = f_info[fan_id];
 
     uint8_t spd_result;
-    int isfanb2f;//present_status, isfanb2f;
+    int isfanb2f = 0;//present_status, isfanb2f;
 
     // result = getFanPresent(fan_id);
 

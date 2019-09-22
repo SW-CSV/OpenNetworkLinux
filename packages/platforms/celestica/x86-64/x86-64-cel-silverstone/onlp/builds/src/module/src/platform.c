@@ -839,7 +839,7 @@ int getFanSpeedCache(int id,int *per, int *rpm)
 
 	int i = 0;
 	int ret = 0;
-    char strTmp[10][128] = {{0}, {0}};
+    char strTmp[2][128] = {{0}, {0}};
     char *token = NULL;
     char *Fan_sensor_name[7] = {
         "Fan1_Rear", "Fan2_Rear", "Fan3_Rear", "Fan4_Rear",
@@ -892,7 +892,7 @@ int getFanSpeedCache(int id,int *per, int *rpm)
             {
                 array_trim(token, &strTmp[i][0]);
                 i++;
-                if(i > 10) break;
+                if(i > 2) break;
                 token = strtok(NULL, "|");
             }
             
