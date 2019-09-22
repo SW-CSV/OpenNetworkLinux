@@ -5,7 +5,7 @@
 #define PREFIX_PATH_LEN 100
 
 //FAN
-#define FAN_COUNT   7
+#define FAN_COUNT   9
 
 //PSU
 #define PSU_COUNT 2

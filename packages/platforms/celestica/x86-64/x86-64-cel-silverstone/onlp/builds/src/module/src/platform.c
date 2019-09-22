@@ -31,6 +31,8 @@ static struct device_info fan_information[FAN_COUNT + 1] = {
     {},
     {},
     {},
+    {},
+    {},
 };
 
 static struct device_info psu_information[PSU_COUNT + 1] = {
@@ -841,9 +843,9 @@ int getFanSpeedCache(int id,int *per, int *rpm)
 	int ret = 0;
     char strTmp[2][128] = {{0}, {0}};
     char *token = NULL;
-    char *Fan_sensor_name[7] = {
+    char *Fan_sensor_name[9] = {
         "Fan1_Rear", "Fan2_Rear", "Fan3_Rear", "Fan4_Rear",
-        "Fan5_Rear", "Fan6_Rear", "Fan7_Rear"};
+        "Fan5_Rear", "Fan6_Rear", "Fan7_Rear","PSU1_Fan","PSU2_Fan"};
 
 	if((NULL == per) || (NULL == rpm))
 	{
@@ -853,14 +855,16 @@ int getFanSpeedCache(int id,int *per, int *rpm)
 
     /*
         String example:			  
-        ipmitool sensor list (Plug out FAN1)
+        ipmitool sensor list (Plug out FAN1 and PSU 1)
         Fan1_Rear        | na         | RPM        | na    | na        | 1050.000  | na        | na        | na        | na        
         Fan2_Rear        | 28650.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
         Fan3_Rear        | 29250.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
         Fan4_Rear        | 28650.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
         Fan5_Rear        | 29400.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
         Fan6_Rear        | 29100.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
-        Fan7_Rear        | 29100.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan7_Rear        | 29100.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na   
+        PSU1_Fan         | na         | RPM        | na    | na        | na        | na        | na        | na        | na        
+        PSU2_Fan         | 15800.000  | RPM        | ok    | na        | na        | na        | na        | na        | na      
     */
     if(is_shm_mem_ready()){
         ret = open_file(ONLP_SENSOR_LIST_CACHE_SHARED,ONLP_SENSOR_LIST_SEM, &tmp, &len);

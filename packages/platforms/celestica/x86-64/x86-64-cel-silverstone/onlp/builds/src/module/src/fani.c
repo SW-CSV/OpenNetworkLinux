@@ -38,6 +38,16 @@ onlp_fan_info_t f_info[FAN_COUNT + 1] = {
         0,
         ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
     },
+    {
+        {ONLP_FAN_ID_CREATE(8), "PSU Fan 1", 0},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
+    },
+    {
+        {ONLP_FAN_ID_CREATE(9), "PSU Fan 2", 0},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
+    },
 };
 
 int onlp_fani_init(void)
@@ -71,18 +81,41 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
     // else
     //     info_p->status |= ONLP_FAN_STATUS_B2F;
 
-    getFaninfo(fan_id, info_p->model, info_p->serial,&isfanb2f);
+    if(fan_id <= 7){
+        getFaninfo(fan_id, info_p->model, info_p->serial,&isfanb2f);
+    }else{
+        int psu_id = 0;
+        if(fan_id == 8){
+            psu_id = 1;
+        }else{
+            psu_id = 2;
+        }
+        psu_get_model_sn(psu_id, info_p->model, info_p->serial);
+        isfanb2f = 2;
+    }
+    
 
     spd_result = getFanSpeedCache(fan_id,&(info_p->percentage), &(info_p->rpm));
     if(spd_result){
-        return ONLP_STATUS_E_MISSING;
+        return ONLP_FAN_STATUS_FAILED;
     }
 
     info_p->status |= ONLP_FAN_STATUS_PRESENT;
-    if (!isfanb2f)
+    // if (!isfanb2f)
+    //     info_p->status |= ONLP_FAN_STATUS_F2B;
+    // else
+    //     info_p->status |= ONLP_FAN_STATUS_B2F;
+    switch (isfanb2f)
+    {
+    case 0:
         info_p->status |= ONLP_FAN_STATUS_F2B;
-    else
+        break;
+    case 1:
         info_p->status |= ONLP_FAN_STATUS_B2F;
+        break;
+    default:
+        break;
+    }
 
     return ONLP_STATUS_OK;
 }
