@@ -119,22 +119,26 @@ int is_cache_exist(){
 
 int is_shm_mem_ready(){
 
-    // const char *sdr_cache_path="/run/shm/onlp-sensor-list-cache-shared";
-    // const char *fru_cache_path="/run/shm/onlp-fru-cache-shared";
+    if(USE_SHM_METHOD){
+        const char *sdr_cache_path="/run/shm/onlp-sensor-list-cache-shared";
+        const char *fru_cache_path="/run/shm/onlp-fru-cache-shared";
 
-    // if(access(fru_cache_path, F_OK) == -1 || access(sdr_cache_path, F_OK) == -1 ){ //Shared cache files not exist
-    //     return 0;
-    // }
+        if(access(fru_cache_path, F_OK) == -1 || access(sdr_cache_path, F_OK) == -1 ){ //Shared cache files not exist
+            return 0;
+        }
 
-    // return 1;
+    return 1;
+    }
+    
     return 0;
 }
 
 int create_cache(){
-    // (void)system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
     (void)system("ipmitool fru > /tmp/onlp-fru-cache.txt");
     (void)system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt");
-    //update_shm_mem();
+    if(USE_SHM_METHOD){
+        update_shm_mem();
+    }
     return 1;
 }
 
@@ -197,50 +201,6 @@ int exec_ipmitool_cmd(char *cmd, char *retd)
     }
 
     return ret;
-}
-
-int fan_cpld_read_reg(uint8_t reg, uint8_t *result)
-{
-    int ret = 0;
-    char command[256];
-    char buffer[128];
-
-    sprintf(command, "ipmitool raw 0x3a 0x03 0x01 0x01 0x%02x", reg);
-    exec_ipmitool_cmd(command, buffer);
-    *result = strtol(buffer, NULL, 16);
-    
-    return ret;
-}
-
-uint8_t getFanPresent(int id)
-{
-    int ret = -1;
-    uint16_t fan_stat_reg;
-    uint8_t result;
-
-    if (id <= (FAN_COUNT))
-    {
-        fan_stat_reg = fan_sys_reg[id].ctrl_sta_reg;
-        fan_cpld_read_reg(fan_stat_reg, &result);
-        ret = result;
-    }
-
-    return ret;
-}
-
-
-uint8_t getFanSpeed(int id)
-{
-    uint8_t value;
-
-    if (id <= (FAN_COUNT))
-    {
-        uint16_t fan_stat_reg;
-        fan_stat_reg = fan_sys_reg[id].pwm_reg;
-        fan_cpld_read_reg(fan_stat_reg, &value);
-    }
-
-    return value;
 }
 
 uint8_t getLEDStatus(int id)

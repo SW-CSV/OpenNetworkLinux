@@ -64,22 +64,7 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
     *info_p = f_info[fan_id];
 
     uint8_t spd_result;
-    int isfanb2f = 0;//present_status, isfanb2f;
-
-    // result = getFanPresent(fan_id);
-
-    // present_status = result & 0x01;
-    // isfanb2f = (result >> 1) & 0x1;
-
-    // if (!present_status)
-    //     info_p->status |= ONLP_FAN_STATUS_PRESENT;
-    // else
-    //     return ONLP_STATUS_E_MISSING;
-
-    // if (!isfanb2f)
-    //     info_p->status |= ONLP_FAN_STATUS_F2B;
-    // else
-    //     info_p->status |= ONLP_FAN_STATUS_B2F;
+    int isfanb2f = 0;
 
     if(fan_id <= 7){
         getFaninfo(fan_id, info_p->model, info_p->serial,&isfanb2f);
@@ -101,10 +86,7 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
     }
 
     info_p->status |= ONLP_FAN_STATUS_PRESENT;
-    // if (!isfanb2f)
-    //     info_p->status |= ONLP_FAN_STATUS_F2B;
-    // else
-    //     info_p->status |= ONLP_FAN_STATUS_B2F;
+
     switch (isfanb2f)
     {
     case 0:

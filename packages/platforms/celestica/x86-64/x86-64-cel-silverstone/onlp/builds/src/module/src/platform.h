@@ -54,6 +54,8 @@
 
 #define NUM_OF_CPLD 1
 
+#define USE_SHM_METHOD 0
+
 struct shm_map_data{
     char data[16384]; 
     int size;
@@ -126,8 +128,6 @@ int getFaninfo(int id,char* model,char* serial,int *getFaninfo);
 int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown);
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len);
 int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len);
-uint8_t getFanPresent(int id);
-uint8_t getFanSpeed(int id);
 int getFanSpeedCache(int id,int* per,int* rpm);
 uint8_t getPsuStatus_sysfs_cpld(int id);
 int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_map_data *shared_mem);
