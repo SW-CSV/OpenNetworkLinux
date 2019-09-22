@@ -23,7 +23,7 @@ char command[256];
 FILE *fp;
 
 static struct device_info fan_information[FAN_COUNT + 1] = {
-    {"unknown", "unknown"}, //check
+    {"unknown", "unknown",1}, //check
     {}, //Fan 1
     {}, //Fan 2
     {}, //Fan 3
@@ -630,7 +630,7 @@ int keyword_match(char *a, char *b)
         return -1;
 }
 
-int getFaninfo(int id, char *model, char *serial)
+int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
 {
     int index;
     char *token;
@@ -677,9 +677,27 @@ int getFaninfo(int id, char *model, char *serial)
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
                     sprintf(fan_information[index].model,"%s",trim_token);
-                    flag = 0;
-                    search_fan_id++;
+                    
+                }else if (strstr(content, "Board Extra")) 
+                {
+                    token = strtok(content, ":");
+                    token = strtok(NULL, ":");
+                    char* trim_token = trim(token);
+                    //sprintf(fan_information[index].airflow,"%s",trim_token);
+                    //Check until find B2F or F2B
+                    if(strstr(trim_token, "B2F")||strstr(trim_token ,"F2B")){ //found 
+                        // printf("found val = %s\n",trim_token);
+                        if(strstr(trim_token, "B2F")){
+                            *isfanb2f = 1;
+                        }else{
+                            *isfanb2f = 0;
+                        }
+                        flag = 0;
+                        search_fan_id++;
+                    }
+
                 }
+                
             }
             if(search_fan_id > FAN_COUNT){
                 content = NULL;

@@ -53,30 +53,36 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
 
     *info_p = f_info[fan_id];
 
-    uint8_t result, spd_result;
-    int present_status, isfanb2f;
+    uint8_t spd_result;
+    int isfanb2f;//present_status, isfanb2f;
 
-    result = getFanPresent(fan_id);
+    // result = getFanPresent(fan_id);
 
-    present_status = result & 0x01;
-    isfanb2f = (result >> 1) & 0x1;
+    // present_status = result & 0x01;
+    // isfanb2f = (result >> 1) & 0x1;
 
-    if (!present_status)
-        info_p->status |= ONLP_FAN_STATUS_PRESENT;
-    else
-        return ONLP_STATUS_E_MISSING;
+    // if (!present_status)
+    //     info_p->status |= ONLP_FAN_STATUS_PRESENT;
+    // else
+    //     return ONLP_STATUS_E_MISSING;
 
-    if (!isfanb2f)
-        info_p->status |= ONLP_FAN_STATUS_F2B;
-    else
-        info_p->status |= ONLP_FAN_STATUS_B2F;
+    // if (!isfanb2f)
+    //     info_p->status |= ONLP_FAN_STATUS_F2B;
+    // else
+    //     info_p->status |= ONLP_FAN_STATUS_B2F;
 
-    getFaninfo(fan_id, info_p->model, info_p->serial);
+    getFaninfo(fan_id, info_p->model, info_p->serial,&isfanb2f);
 
     spd_result = getFanSpeedCache(fan_id,&(info_p->percentage), &(info_p->rpm));
     if(spd_result){
         return ONLP_STATUS_E_MISSING;
     }
+
+    info_p->status |= ONLP_FAN_STATUS_PRESENT;
+    if (!isfanb2f)
+        info_p->status |= ONLP_FAN_STATUS_F2B;
+    else
+        info_p->status |= ONLP_FAN_STATUS_B2F;
 
     return ONLP_STATUS_OK;
 }
