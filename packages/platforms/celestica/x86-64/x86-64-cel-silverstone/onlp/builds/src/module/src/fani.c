@@ -54,12 +54,7 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
     *info_p = f_info[fan_id];
 
     uint8_t result, spd_result;
-    int present_status, isfanb2f, speed_pwm;
-
-    uint8_t max_speed = 0xFF;
-    int max_rpm_speed = 13800;
-    int lowest_rpm_speed = 1200;
-    float speed_percentage;
+    int present_status, isfanb2f;
 
     result = getFanPresent(fan_id);
 
@@ -78,12 +73,10 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
 
     getFaninfo(fan_id, info_p->model, info_p->serial);
 
-    spd_result = getFanSpeed(fan_id);
-    speed_percentage = (spd_result * 100) / max_speed;
-    speed_pwm = (speed_percentage * ((max_rpm_speed - lowest_rpm_speed) / 100) + lowest_rpm_speed);
-
-    info_p->percentage = (int)speed_percentage;
-    info_p->rpm = speed_pwm;
+    spd_result = getFanSpeedCache(fan_id,&(info_p->percentage), &(info_p->rpm));
+    if(spd_result){
+        return ONLP_STATUS_E_MISSING;
+    }
 
     return ONLP_STATUS_OK;
 }

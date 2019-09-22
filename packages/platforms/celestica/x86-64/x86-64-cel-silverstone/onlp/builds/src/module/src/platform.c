@@ -728,7 +728,7 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
 
     /*
         String example:			  
-        ipmitool sensor list | grep TEMP_FAN_U52
+        ipmitool sensor list
         TEMP_CPU     | 1.000      | degrees C  | ok  | 5.000  | 9.000  | 16.000  | 65.000  | 73.000  | 75.606
         TEMP_FAN_U52 | 32.000	  | degrees C  | ok  | na  |  na  | na  | na  | 70.000  | 75.000
         PSUR_Temp1   | na         | degrees C  | na  | na  | na   | na   | na  | na  | na
@@ -809,6 +809,109 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     }
 
     return 0;
+}
+
+int getFanSpeedCache(int id,int *per, int *rpm)
+{
+    
+    int max_rpm_speed = 29700;// = 100% speed
+    char *tmp = (char *)NULL;
+    int len = 0;
+    int index  = 0;
+
+	int i = 0;
+	int ret = 0;
+    char strTmp[10][128] = {{0}, {0}};
+    char *token = NULL;
+    char *Fan_sensor_name[7] = {
+        "Fan1_Rear", "Fan2_Rear", "Fan3_Rear", "Fan4_Rear",
+        "Fan5_Rear", "Fan6_Rear", "Fan7_Rear"};
+
+	if((NULL == per) || (NULL == rpm))
+	{
+		printf("%s null pointer!\n", __FUNCTION__);
+		return -1;
+	}
+
+    /*
+        String example:			  
+        ipmitool sensor list (Plug out FAN1)
+        Fan1_Rear        | na         | RPM        | na    | na        | 1050.000  | na        | na        | na        | na        
+        Fan2_Rear        | 28650.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan3_Rear        | 29250.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan4_Rear        | 28650.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan5_Rear        | 29400.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan6_Rear        | 29100.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan7_Rear        | 29100.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+    */
+    if(is_shm_mem_ready()){
+        ret = open_file(ONLP_SENSOR_LIST_CACHE_SHARED,ONLP_SENSOR_LIST_SEM, &tmp, &len);
+        if(ret < 0 || !tmp){
+            printf("Failed - Failed to obtain system information\n");
+            (void)free(tmp);
+            tmp = (char *)NULL;
+            return ret;
+        }
+    }else{
+        // use unsafe method to read the cache file.
+        sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
+        tmp = read_tmp_cache(command);
+    }
+    
+    char *content, *temp_pointer;
+    int flag = 0;
+    content = strtok_r(tmp, "\n", &temp_pointer);
+    while(content != NULL){
+        if (strstr(content, Fan_sensor_name[id - 1])) {
+            flag = 1;
+            index++;
+        }
+        if(flag == 1){
+
+            i = 0;
+            token = strtok(content, "|");
+            while( token != NULL ) 
+            {
+                array_trim(token, &strTmp[i][0]);
+                i++;
+                if(i > 10) break;
+                token = strtok(NULL, "|");
+            }
+            
+            flag = 3;
+        }
+        
+        if(flag == 3){
+            content = NULL;
+        }else{
+            content = strtok_r(NULL, "\n", &temp_pointer);
+        }
+    }
+
+    if (0 == strcmp(&strTmp[1][0], "na")){
+        *rpm = 0;
+        ret = -1;
+    }else{
+        *rpm = atof(&strTmp[1][0]);
+    }
+
+    if (0 == strcmp(&strTmp[1][0], "na"))
+        *per = 0;
+    else
+        *per = (atof(&strTmp[1][0]) * 100 )/ max_rpm_speed;
+
+    if(content){
+        content = (char *)NULL;
+    }
+    if(temp_pointer){
+        temp_pointer = (char *)NULL;
+    }
+    if(tmp){
+    	(void)free(tmp);
+	    tmp = (char *)NULL;
+    }
+
+    return ret;
 }
 
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len)
