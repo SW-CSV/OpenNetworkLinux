@@ -14,3 +14,4 @@
 - onl-kernel-4.14-lts-x86-64-all-modules
 - efibootmgr
 - gdisk
+- valgrind
