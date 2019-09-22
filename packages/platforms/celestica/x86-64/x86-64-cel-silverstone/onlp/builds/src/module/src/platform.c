@@ -73,7 +73,7 @@ void update_shm_mem(void)
 }
 
 int is_cache_exist(){
-    const char *path="/tmp/onlp-sensor-cache.txt";
+    const char *path="/tmp/onlp-sensor-list-cache.txt";
     const char *time_setting_path="/var/opt/interval_time.txt";
     time_t current_time;
     int interval_time = 30; //set default to 30 sec
@@ -117,21 +117,22 @@ int is_cache_exist(){
 
 int is_shm_mem_ready(){
 
-    const char *sdr_cache_path="/run/shm/onlp-sensor-list-cache-shared";
-    const char *fru_cache_path="/run/shm/onlp-fru-cache-shared";
+    // const char *sdr_cache_path="/run/shm/onlp-sensor-list-cache-shared";
+    // const char *fru_cache_path="/run/shm/onlp-fru-cache-shared";
 
-    if(access(fru_cache_path, F_OK) == -1 || access(sdr_cache_path, F_OK) == -1 ){ //Shared cache files not exist
-        return 0;
-    }
+    // if(access(fru_cache_path, F_OK) == -1 || access(sdr_cache_path, F_OK) == -1 ){ //Shared cache files not exist
+    //     return 0;
+    // }
 
-    return 1;
+    // return 1;
+    return 0;
 }
 
 int create_cache(){
-    (void)system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
+    // (void)system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
     (void)system("ipmitool fru > /tmp/onlp-fru-cache.txt");
     (void)system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt");
-    update_shm_mem();
+    //update_shm_mem();
     return 1;
 }
 
