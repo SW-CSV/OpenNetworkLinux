@@ -134,8 +134,8 @@ int is_shm_mem_ready(){
 }
 
 int create_cache(){
-    (void)system("ipmitool fru > /tmp/onlp-fru-cache.txt");
-    (void)system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt");
+    (void)system("ipmitool fru > /tmp/onlp-fru-cache.tmp; sync /tmp/onlp-fru-cache.tmp; rm /tmp/onlp-fru-cache.txt; mv /tmp/onlp-fru-cache.tmp /tmp/onlp-fru-cache.txt");
+    (void)system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.tmp; sync /tmp/onlp-sensor-list-cache.tmp; rm /tmp/onlp-sensor-list-cache.txt; mv /tmp/onlp-sensor-list-cache.tmp /tmp/onlp-sensor-list-cache.txt");
     if(USE_SHM_METHOD){
         update_shm_mem();
     }
