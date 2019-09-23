@@ -16,6 +16,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #include "platform.h"
 
@@ -222,12 +223,18 @@ uint8_t getLEDStatus(int id)
     return ret;
 }
 
-char *read_tmp_cache(char *cmd)
+char *read_tmp_cache(char *cmd, char *cache_file_path)
 {
     FILE *pFd = NULL;
-    char c; 
-    char *str = (char *)malloc(sizeof(char) * 16384);
-    memset (str, 0, sizeof (char) * 16384);
+    char c;
+    struct stat st;
+
+    stat(cache_file_path, &st);
+
+    int size = st.st_size;
+    char *str = (char *)malloc(size+1);
+    memset (str, 0, size+1);
+
     int i = 0;
 
     pFd = popen(cmd, "r");
@@ -354,7 +361,7 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
     }else{
         // use unsafe method to read the cache file.
         sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
-        tmp = read_tmp_cache(command);
+        tmp = read_tmp_cache(command,ONLP_SENSOR_LIST_FILE);
     }
 
     char *content, *temp_pointer;
@@ -501,7 +508,7 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
         }else{
             // use unsafe method to read the cache file.
             sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
-            tmp = read_tmp_cache(command);
+            tmp = read_tmp_cache(command,ONLP_FRU_CACHE_FILE);
         }
         
         char *content, *temp_pointer;
@@ -615,7 +622,7 @@ int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
         }else{
             // use unsafe method to read the cache file.
             sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
-            tmp = read_tmp_cache(command);
+            tmp = read_tmp_cache(command,ONLP_FRU_CACHE_FILE);
         }
         char *content, *temp_pointer;
         int flag = 0;
@@ -722,7 +729,7 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     }else{
         // use unsafe method to read the cache file.
         sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
-        tmp = read_tmp_cache(command);
+        tmp = read_tmp_cache(command,ONLP_SENSOR_LIST_FILE);
     }
     
     char *content, *temp_pointer;
@@ -835,7 +842,7 @@ int getFanSpeedCache(int id,int *per, int *rpm)
     }else{
         // use unsafe method to read the cache file.
         sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
-        tmp = read_tmp_cache(command);
+        tmp = read_tmp_cache(command,ONLP_SENSOR_LIST_FILE);
     }
     
     char *content, *temp_pointer;
