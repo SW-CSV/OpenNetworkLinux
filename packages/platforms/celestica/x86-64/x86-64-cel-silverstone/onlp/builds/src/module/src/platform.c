@@ -76,13 +76,15 @@ void update_shm_mem(void)
 }
 
 int is_cache_exist(){
-    const char *path="/tmp/onlp-sensor-list-cache.txt";
+    const char *sdr_cache_path="/tmp/onlp-sensor-list-cache.txt";
+    const char *fru_cache_path="/tmp/onlp-fru-cache.txt";
     const char *time_setting_path="/var/opt/interval_time.txt";
     time_t current_time;
     int interval_time = 30; //set default to 30 sec
-    double diff_time;
-    struct stat fst;
-    bzero(&fst,sizeof(fst));
+    double sdr_diff_time,fru_diff_time;
+    struct stat sdr_fst,fru_fst;
+    bzero(&sdr_fst,sizeof(sdr_fst));
+    bzero(&fru_fst,sizeof(fru_fst));
 
     //Read setting
     if(access(time_setting_path, F_OK) == -1){ //Setting not exist
@@ -103,15 +105,17 @@ int is_cache_exist(){
         fclose(fp);
     }
 
-    if (access(path, F_OK) == -1){ //Cache not exist
+    if ((access(sdr_cache_path, F_OK) == -1) && (access(fru_cache_path, F_OK) == -1)){ //Cache not exist
         return -1;
     }else{ //Cache exist
         current_time = time(NULL);
-        if (stat(path,&fst) != 0) { printf("stat() failed"); exit(-1); }
+        if (stat(sdr_cache_path,&sdr_fst) != 0) { printf("stat() sdr_cache failed"); exit(-1); }
+        if (stat(fru_cache_path,&fru_fst) != 0) { printf("stat() fru_cache failed"); exit(-1); }
 
-        diff_time = difftime(current_time,fst.st_mtime);
+        sdr_diff_time = difftime(current_time,sdr_fst.st_mtime);
+        fru_diff_time = difftime(current_time,fru_fst.st_mtime);
 
-        if(diff_time > interval_time){
+        if((sdr_diff_time > interval_time)&&(fru_diff_time > interval_time)){
             return -1;
         }
         return 1;
@@ -227,25 +231,45 @@ char *read_tmp_cache(char *cmd, char *cache_file_path)
 {
     FILE* pFd = NULL;
     char *str = NULL;
+    int round = 1;
+    
+    // if(pFd != NULL ){
 
-    pFd = fopen(cache_file_path, "r");
-    if(pFd != NULL ){
+    //     struct stat st;
 
-        struct stat st;
+    //     stat(cache_file_path, &st);
 
-        stat(cache_file_path, &st);
-
-        int size = st.st_size;
-        str = (char *)malloc(size + 1);
+    //     int size = st.st_size;
+    //     str = (char *)malloc(size + 1);
         
-        memset (str, 0, size+1);
+    //     memset (str, 0, size+1);
 
-        fread(str, size+1, 1, pFd);
+    //     fread(str, size+1, 1, pFd);
 
+    // }
+
+    // fclose(pFd);
+
+    for(round = 1;round <= 10;round++){
+        pFd = fopen(cache_file_path, "r");
+        if(pFd != NULL ){
+
+            struct stat st;
+
+            stat(cache_file_path, &st);
+
+            int size = st.st_size;
+            str = (char *)malloc(size + 1);
+            
+            memset (str, 0, size+1);
+
+            fread(str, size+1, 1, pFd);
+            break;
+        }else{
+            usleep(50);
+        }
     }
-
     fclose(pFd);
-
     return str;
 }
 
