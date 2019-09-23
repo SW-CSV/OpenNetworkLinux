@@ -645,14 +645,12 @@ int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
                     token = strtok(content, ":");
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
-                    //sprintf(fan_information[index].airflow,"%s",trim_token);
                     //Check until find B2F or F2B
-                    if(strstr(trim_token, "B2F")||strstr(trim_token ,"F2B")){ //found 
-                        // printf("found val = %s\n",trim_token);
-                        if(strstr(trim_token, "B2F")){
-                            *isfanb2f = 1;
+                    if(strcmp(trim_token, "B2F")||strcmp(trim_token ,"F2B")){ //found 
+                        if(strcmp(trim_token, "B2F")){
+                            fan_information[index].airflow = 4;
                         }else{
-                            *isfanb2f = 0;
+                            fan_information[index].airflow = 8;
                         }
                         flag = 0;
                         search_fan_id++;
@@ -680,7 +678,7 @@ int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
     }
     strcpy(model, fan_information[id].model);
     strcpy(serial, fan_information[id].serial_number);
-
+    *isfanb2f = fan_information[id].airflow;
     
     return 1;
 }

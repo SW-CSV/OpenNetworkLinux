@@ -72,11 +72,11 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
         int psu_id = 0;
         if(fan_id == 8){
             psu_id = 1;
-        }else{
+        }else if(fan_id == 9){
             psu_id = 2;
         }
         psu_get_model_sn(psu_id, info_p->model, info_p->serial);
-        isfanb2f = 2;
+        isfanb2f = -1;
     }
     
 
@@ -89,10 +89,10 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
 
     switch (isfanb2f)
     {
-    case 0:
+    case ONLP_FAN_STATUS_F2B:
         info_p->status |= ONLP_FAN_STATUS_F2B;
         break;
-    case 1:
+    case ONLP_FAN_STATUS_B2F:
         info_p->status |= ONLP_FAN_STATUS_B2F;
         break;
     default:
