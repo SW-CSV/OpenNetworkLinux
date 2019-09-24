@@ -254,6 +254,11 @@ char *read_tmp_cache(char *cmd, char *cache_file_path)
             usleep(5000); //Sleep for 5 Microsec for waiting the file operation complete
         }
     }
+
+    if(round >= 10 && str == NULL){
+        str = (char *)malloc(1);
+        memset (str, 0, 1);
+    }
     
     return str;
 }
@@ -510,7 +515,6 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
             sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
             tmp = read_tmp_cache(command,ONLP_FRU_CACHE_FILE);
         }
-        
         char *content, *temp_pointer;
         int flag = 0;
 
