@@ -109,8 +109,8 @@ int is_cache_exist(){
         return -1;
     }else{ //Cache exist
         current_time = time(NULL);
-        if (stat(sdr_cache_path,&sdr_fst) != 0) { printf("stat() sdr_cache failed"); exit(-1); }
-        if (stat(fru_cache_path,&fru_fst) != 0) { printf("stat() fru_cache failed"); exit(-1); }
+        if (stat(sdr_cache_path,&sdr_fst) != 0) { printf("stat() sdr_cache failed\n"); return -1; }
+        if (stat(fru_cache_path,&fru_fst) != 0) { printf("stat() fru_cache failed\n"); return -1; }
 
         sdr_diff_time = difftime(current_time,sdr_fst.st_mtime);
         fru_diff_time = difftime(current_time,fru_fst.st_mtime);

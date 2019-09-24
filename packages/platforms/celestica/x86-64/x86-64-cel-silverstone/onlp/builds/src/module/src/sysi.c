@@ -30,6 +30,7 @@ int onlp_sysi_init(void)
 {
     if (is_cache_exist() < 1)
     {
+        printf("%s Call create cache\n",__func__);
         create_cache();
     }
     return ONLP_STATUS_OK;
@@ -89,6 +90,7 @@ int onlp_sysi_platform_manage_init(void)
 {
     if (is_cache_exist() < 1)
     {
+        printf("%s Call create cache\n",__func__);
         create_cache();
     }
     return ONLP_STATUS_OK;
@@ -98,6 +100,7 @@ int onlp_sysi_platform_manage_fans(void)
 {
     if (is_cache_exist() < 1)
     {
+        printf("%s Call create cache\n",__func__);
         create_cache();
     }
     return ONLP_STATUS_OK;
@@ -107,6 +110,7 @@ int onlp_sysi_platform_manage_leds(void)
 {
     if (is_cache_exist() < 1)
     {
+        printf("%s Call create cache\n",__func__);
         create_cache();
     }
     return ONLP_STATUS_OK;
