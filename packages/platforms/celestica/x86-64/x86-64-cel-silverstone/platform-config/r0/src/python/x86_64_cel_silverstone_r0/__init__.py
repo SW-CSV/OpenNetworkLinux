@@ -68,7 +68,7 @@ class OnlPlatform_x86_64_cel_silverstone_r0(OnlPlatformCelestica,
         
         #initialize onlp cache files
         print("Initialize ONLP Cache files")
-        os.system("ipmitool fru > /tmp/onlp-fru-cache.tmp; sync; rm /tmp/onlp-fru-cache.txt; mv /tmp/onlp-fru-cache.tmp /tmp/onlp-fru-cache.txt")
-        os.system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.tmp; sync; rm /tmp/onlp-sensor-list-cache.txt; mv /tmp/onlp-sensor-list-cache.tmp /tmp/onlp-sensor-list-cache.txt")
+        os.system("ipmitool fru > /tmp/onlp-fru-cache.tmp; sync; rm -f /tmp/onlp-fru-cache.txt; mv /tmp/onlp-fru-cache.tmp /tmp/onlp-fru-cache.txt")
+        os.system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.tmp; sync; rm -f /tmp/onlp-sensor-list-cache.txt; mv /tmp/onlp-sensor-list-cache.tmp /tmp/onlp-sensor-list-cache.txt")
 
         return True
