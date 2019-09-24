@@ -232,23 +232,6 @@ char *read_tmp_cache(char *cmd, char *cache_file_path)
     FILE* pFd = NULL;
     char *str = NULL;
     int round = 1;
-    
-    // if(pFd != NULL ){
-
-    //     struct stat st;
-
-    //     stat(cache_file_path, &st);
-
-    //     int size = st.st_size;
-    //     str = (char *)malloc(size + 1);
-        
-    //     memset (str, 0, size+1);
-
-    //     fread(str, size+1, 1, pFd);
-
-    // }
-
-    // fclose(pFd);
 
     for(round = 1;round <= 10;round++){
         pFd = fopen(cache_file_path, "r");
@@ -264,12 +247,14 @@ char *read_tmp_cache(char *cmd, char *cache_file_path)
             memset (str, 0, size+1);
 
             fread(str, size+1, 1, pFd);
+
+            fclose(pFd);
             break;
         }else{
-            usleep(50);
+            usleep(5000); //Sleep for 5 Microsec for waiting the file operation complete
         }
     }
-    fclose(pFd);
+    
     return str;
 }
 
