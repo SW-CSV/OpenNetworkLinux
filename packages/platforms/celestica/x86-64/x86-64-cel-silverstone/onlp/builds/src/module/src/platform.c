@@ -487,7 +487,21 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
         }
         char *content, *temp_pointer;
         int flag = 0;
+        /*
+        String example:			  
+        root@localhost:~# ipmitool fru (Pull out PSU1)
 
+        FRU Device Description : FRU_PSUL (ID 3)
+         Device not present (Unknown (0x81))
+
+        FRU Device Description : FRU_PSUR (ID 4)
+         Board Mfg Date        : Mon Mar 11 08:55:00 2019
+         Board Mfg             : DELTA-THAILAND  
+         Board Product         : 1500W-CAPELLA-PSU 1500W 
+         Board Serial          : FFGT1911000697
+         Board Part Number     : TDPS1500AB6B
+
+        */
         content = strtok_r(tmp, "\n", &temp_pointer);
 
         while(content != NULL){
@@ -540,10 +554,8 @@ int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
     int index;
     char *token;
     char *tmp = (char *)NULL;
-    char search_header[35];
     int len = 0;
     int ret = -1;
-    int search_fan_id = 1;
 
     if (0 == strcasecmp(fan_information[0].model, "unknown")) {
         index = 0;
@@ -560,13 +572,43 @@ int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
             sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
             tmp = read_tmp_cache(command,ONLP_FRU_CACHE_FILE);
         }
+        /*
+        String example:			  
+        root@localhost:~# ipmitool fru (Pull out FAN1)
+
+        FRU Device Description : FRU_FAN1 (ID 6)
+         Device not present (Unknown (0x81))
+
+        FRU Device Description : FRU_FAN2 (ID 7)
+         Board Mfg Date        : Sat Apr  6 10:26:00 2019
+         Board Mfg             : Celestica
+         Board Product         : Fan Board 2
+         Board Serial          : R1141-F0018-01GD0119170163
+         Board Part Number     : R1141-F0018-01
+         Board Extra           : Mt.Echo-Fan
+         Board Extra           : 02
+         Board Extra           : F2B
+
+        .
+        .
+
+        FRU Device Description : FRU_FAN7 (ID 12)
+         Board Mfg Date        : Sat Apr  6 10:26:00 2019
+         Board Mfg             : Celestica
+         Board Product         : Fan Board 7
+         Board Serial          : R1141-F0018-01GD0119170165
+         Board Part Number     : R1141-F0018-01
+         Board Extra           : Mt.Echo-Fan
+         Board Extra           : 02
+         Board Extra           : F2B
+
+        */
         char *content, *temp_pointer;
         int flag = 0;
         content = strtok_r(tmp, "\n", &temp_pointer);
 
         while(content != NULL){
-            sprintf(search_header,"FRU Device Description : FRU_FAN%d",search_fan_id);
-            if (strstr(content, search_header)) {
+            if (strstr(content, "FRU_FAN") && !strstr(content,"FRU_FANBRD")) {
                 flag = 1;
                 index++;
             }
@@ -589,20 +631,18 @@ int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
                     //Check until find B2F or F2B
-                    if(strcmp(trim_token, "B2F")||strcmp(trim_token ,"F2B")){ //found 
-                        if(strcmp(trim_token, "B2F")){
-                            fan_information[index].airflow = 4;
-                        }else{
-                            fan_information[index].airflow = 8;
-                        }
+                    if(strcmp(trim_token, "B2F") == 0){
+                        fan_information[index].airflow = 4;
                         flag = 0;
-                        search_fan_id++;
+                    }else if(strcmp(trim_token ,"F2B") == 0){
+                        fan_information[index].airflow = 8;
+                        flag = 0;
                     }
 
                 }
                 
             }
-            if(search_fan_id > FAN_COUNT){
+            if(index > FAN_COUNT){
                 content = NULL;
             }else{
                 content = strtok_r(NULL, "\n", &temp_pointer);
