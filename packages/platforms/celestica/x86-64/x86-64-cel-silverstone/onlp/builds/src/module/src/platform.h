@@ -120,10 +120,7 @@ uint8_t getLEDStatus(int id);
 int psu_get_model_sn(int id,char* model,char* serial_number);
 
 int psu_get_info(int id,int *mvin,int *mvout,int *mpin,int *mpout,int *miin,int *miout);
-char* read_psu_sdr(int id);
-int keyword_match(char* a,char *b);
 char* trim (char *s);
-void append(char* s, char c);
 int getFaninfo(int id,char* model,char* serial,int *getFaninfo);
 int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown);
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len);

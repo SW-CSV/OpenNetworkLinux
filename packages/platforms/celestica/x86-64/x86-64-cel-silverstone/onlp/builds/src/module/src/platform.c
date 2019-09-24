@@ -279,36 +279,6 @@ uint8_t getPsuStatus_sysfs_cpld(int id)
     return ret;
 }
 
-char *read_psu_sdr(int id)
-{
-    FILE *pFd = NULL;
-    char c;
-    char *str = (char *)malloc(sizeof(char) * 5000);
-    int i = 0;
-
-    sprintf(command,"cat /tmp/onlp-sensor-cache.txt | grep PSU");
-    pFd = popen(command, "r");
-    if (pFd != NULL)
-    {
-
-        c = fgetc(pFd);
-        while (c != EOF)
-        {
-            str[i] = c;
-            i++;
-            c = fgetc(pFd);
-        }
-
-        pclose(pFd);
-    }
-    else
-    {
-        printf("execute command %s failed\n", command);
-    }
-
-    return str;
-}
-
 int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
 {
     char *tmp = (char *)NULL;
@@ -563,44 +533,6 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
     strcpy(serial_number, psu_information[id].serial_number);
 
     return 1;
-}
-
-void append(char *s, char c)
-{
-    int len = strlen(s);
-    s[len] = c;
-    s[len + 1] = '\0';
-}
-
-int keyword_match(char *a, char *b)
-{
-    int position = 0;
-    char *x, *y;
-
-    x = a;
-    y = b;
-
-    while (*a)
-    {
-        while (*x == *y)
-        {
-            x++;
-            y++;
-            if (*x == '\0' || *y == '\0')
-                break;
-        }
-        if (*y == '\0')
-            break;
-
-        a++;
-        position++;
-        x = a;
-        y = b;
-    }
-    if (*a)
-        return position;
-    else
-        return -1;
 }
 
 int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
