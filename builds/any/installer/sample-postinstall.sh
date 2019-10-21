@@ -128,15 +128,18 @@ echo "Create dummy partition for CLS Diag OS for prevent being destroy by onie-u
 #     exit 0
 # fi
 START_POS=$(sgdisk -f /dev/sda)
-END_POS=$(($START_POS+2048))
+END_POS=$((($START_POS+2048)*2))
 LAST_PARTITION_NUMBER=$(sgdisk -p /dev/sda | grep $(($START_POS-1)) | awk '{print $1}')
 NEW_PARTITION_NUMBER=$((LAST_PARTITION_NUMBER+1))
 sgdisk -n $NEW_PARTITION_NUMBER:$START_POS:$END_POS -t $NEW_PARTITION_NUMBER:0700 /dev/sda
 sgdisk --change-name=$NEW_PARTITION_NUMBER:"CLS-DIAG" /dev/sda
 sgdisk -A $(sgdisk -p /dev/sda | grep "CLS-DIAG" | awk '{print $1}'):set:0 /dev/sda
-dd if=/dev/zero of=/dev/sda$NEW_PARTITION_NUMBER bs=1M count=1
-mkfs.ext4 /dev/sda$NEW_PARTITION_NUMBER
+sync
 partprobe /dev/sda
-mkfs.ext4 -F -L "CLS-DIAG" /dev/sda$NEW_PARTITION_NUMBER
+mkfs.ext4 -v -O ^huge_file -L CLS-DIAG /dev/sda$NEW_PARTITION_NUMBER || {
+    echo "error using ext2 instead"
+    mkfs.ext2 -v -L CLS-DIAG /dev/sda$NEW_PARTITION_NUMBER 
+}
+partprobe /dev/sda
 
 exit 0

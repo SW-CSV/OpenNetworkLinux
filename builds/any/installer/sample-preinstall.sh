@@ -57,7 +57,7 @@ fi
 ## Remove Dummy partition CLS-DIAG if exist
 if [ ! -z $(sgdisk -p /dev/sda | grep CLS-DIAG | awk '{print $1}') ]; then
     DUMMY_PARTITION_NUMBER=$(sgdisk -p /dev/sda | grep CLS-DIAG | awk '{print $1}')
-    sgdisk -d $DUMMY_PARTITION_NUMBER /dev/sda
+    parted /dev/sda rm $DUMMY_PARTITION_NUMBER
 fi
 
 ## Move back the ONL efi partition for protect the conflict between install process.
