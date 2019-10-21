@@ -39,6 +39,21 @@ rootdir=$1; shift
 echo "Hello from postinstall"
 echo "Chroot is $rootdir"
 
+ISDIAG_PLATFORM=0
+DIAG_PLATFORM=('x86_64-cel_silverstone-r0' 'x86_64-cel_silverstone_xp-r0')
+PLATFORM=$(onie-sysinfo)
+
+for ((i=0; i<${#DIAG_PLATFORM[@]}; i++)); do
+  if [[ ${DIAG_PLATFORM[$i]} = $PLATFORM ]]; then
+    expr $ISDIAG_PLATFORM + 1
+  fi
+done
+
+#If the platfrom isn't diag installation require then exit.
+if [ $ISDIAG_PLATFORM -gt 0 ]; then
+	exit 0
+fi
+
 PATH_TMP='/tmp/os'
 EFI_PATH_TMP='/tmp/efi'
 DIAG_GRUB_DATA="function diag_bootcmd {

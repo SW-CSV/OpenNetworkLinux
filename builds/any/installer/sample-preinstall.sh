@@ -35,6 +35,21 @@ rootdir=$1; shift
 echo "Hello from preinstall"
 echo "Chroot is $rootdir"
 
+ISDIAG_PLATFORM=0
+DIAG_PLATFORM=('x86_64-cel_silverstone-r0' 'x86_64-cel_silverstone_xp-r0')
+PLATFORM=$(onie-sysinfo)
+
+for ((i=0; i<${#DIAG_PLATFORM[@]}; i++)); do
+  if [[ ${DIAG_PLATFORM[$i]} = $PLATFORM ]]; then
+    expr $ISDIAG_PLATFORM + 1
+  fi
+done
+
+#If the platfrom isn't diag installation require then exit.
+if [ $ISDIAG_PLATFORM -gt 0 ]; then
+	exit 0
+fi
+
 ### Change parition name with -DIAG, The uninstall operation must not modify or remove this partiion.
 ### clear GPT system partition attribute bit (bit 0)
 if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; then
