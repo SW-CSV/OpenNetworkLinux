@@ -118,12 +118,15 @@ rm -f $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 
 #Get boot order before create new one.
 # CURRENT_BOOT_ORDER=$(efibootmgr | grep BootOrder: | awk '{ print $2 }')
-# mkdir -p $EFI_PATH_TMP
-# mount -v /dev/sda$(sgdisk -p /dev/sda | grep "EFI System" | awk '{print $1}') $EFI_PATH_TMP
-# echo "Update EFI directory for ONL from /boot/efi/EFI/ONL to /boot/efi/EFI/ONL-DIAG"
-# if [ -d /tmp/efi/EFI/ONL ]; then
-#     mv /tmp/efi/EFI/ONL /tmp/efi/EFI/ONL-DIAG
-# fi
+mkdir -p $EFI_PATH_TMP
+mount -v /dev/sda$(sgdisk -p /dev/sda | grep "EFI System" | awk '{print $1}') $EFI_PATH_TMP
+echo "Update EFI directory for ONL from /boot/efi/EFI/ONL to /boot/efi/EFI/ONL-DIAG for Prevent BIOS create the boot option"
+if [ -d /tmp/efi/EFI/ONL-DIAG]; then
+    rm -r /tmp/efi/EFI/ONL-DIAG
+fi
+if [ -d /tmp/efi/EFI/ONL ]; then
+    mv /tmp/efi/EFI/ONL /tmp/efi/EFI/ONL-DIAG
+fi
 
 # boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
 # boot_num=${#boot_num}
