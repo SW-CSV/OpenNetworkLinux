@@ -121,7 +121,7 @@ rm -f $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 mkdir -p $EFI_PATH_TMP
 mount -v /dev/sda$(sgdisk -p /dev/sda | grep "EFI System" | awk '{print $1}') $EFI_PATH_TMP
 echo "Update EFI directory for ONL from /boot/efi/EFI/ONL to /boot/efi/EFI/ONL-DIAG for Prevent BIOS create the boot option"
-if [ -d /tmp/efi/EFI/ONL-DIAG]; then
+if [ -d /tmp/efi/EFI/ONL-DIAG ]; then
     rm -r /tmp/efi/EFI/ONL-DIAG
 fi
 if [ -d /tmp/efi/EFI/ONL ]; then
