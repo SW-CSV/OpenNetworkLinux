@@ -40,9 +40,8 @@ static int cel_silverstone_qsfp_sfp_node_read_int(char *path, int *value, int da
     char buf[8];
     *value = 0;
 
-    ret = deviceNodeReadString(path, buf, sizeof(buf), data_len);
-    if (ret == 0)
-    {
+    ret = read_device_node_string(path, buf, sizeof(buf), data_len);
+    if (ret == 0) {
         int is_not_present = atoi(buf);
         if (!is_not_present)
         {
@@ -191,9 +190,7 @@ int onlp_sfpi_eeprom_read(int port, uint8_t data[256])
      * Return OK if eeprom is read
      */
     memset(data, 0, 256);
-
-    if (deviceNodeReadBinary(path, (char *)data, 256, 256) != 0)
-    {
+    if (read_device_node_binary(path, (char*)data, 256, 256) != 0) {
         AIM_LOG_ERROR("Unable to read eeprom from port(%d)\r\n", port);
         return ONLP_STATUS_E_INTERNAL;
     }

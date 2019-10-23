@@ -42,18 +42,6 @@ static struct device_info psu_information[PSU_COUNT + 1] = {
     {}, //PSU 2
 };
 
-static const struct fan_config_p fan_sys_reg[FAN_COUNT + 1] = {
-    {},
-    {0x22, 0x26, 0x21, 0x20}, //FAN_1
-    {0x32, 0x36, 0x31, 0x30}, //FAN_2
-    {0x42, 0x46, 0x41, 0x40}, //FAN_3
-    {0x52, 0x56, 0x51, 0x50}, //FAN_4
-    {0x62, 0x66, 0x61, 0x60}, //FAN_5
-    {0x72, 0x76, 0x71, 0x70}, //FAN_6
-    {0x82, 0x86, 0x81, 0x80}, //FAN_7
-
-};
-
 static const struct led_reg_mapper led_mapper[LED_COUNT + 1] = {
     {},
     {"LED_SYSTEM", LED_SYSTEM_H, LED_SYSTEM_REGISTER},
@@ -208,7 +196,7 @@ int exec_ipmitool_cmd(char *cmd, char *retd)
     return ret;
 }
 
-uint8_t getLEDStatus(int id)
+uint8_t get_led_status(int id)
 {
     uint8_t ret = 0xFF;
 
@@ -263,7 +251,7 @@ char *read_tmp_cache(char *cmd, char *cache_file_path)
     return str;
 }
 
-uint8_t getPsuStatus_sysfs_cpld(int id)
+uint8_t get_psu_status(int id)
 {
     uint8_t ret = 0xFF;
     uint16_t psu_stat_reg;
@@ -279,7 +267,7 @@ uint8_t getPsuStatus_sysfs_cpld(int id)
     return ret;
 }
 
-int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
+int get_psu_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
 {
     char *tmp = (char *)NULL;
     int len = 0;
@@ -460,7 +448,7 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
     return ret;
 }
 
-int psu_get_model_sn(int id, char *model, char *serial_number)
+int get_psu_model_sn(int id, char *model, char *serial_number)
 {
     int index;
     char *token;
@@ -485,6 +473,7 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
             sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
             tmp = read_tmp_cache(command,ONLP_FRU_CACHE_FILE);
         }
+        
         char *content, *temp_pointer;
         int flag = 0;
         /*
@@ -549,7 +538,7 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
     return 1;
 }
 
-int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
+int get_fan_info(int id, char *model, char *serial, int *isfanb2f)
 {
     int index;
     char *token;
@@ -666,7 +655,7 @@ int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
     return 1;
 }
 
-int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
+int get_sensor_info(int id, int *temp, int *warn, int *error, int *shutdown)
 {
     char *tmp = (char *)NULL;
     int len = 0;
@@ -772,7 +761,7 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     return 0;
 }
 
-int getFanSpeedCache(int id,int *per, int *rpm)
+int get_fan_speed(int id,int *per, int *rpm)
 {
     
     int max_rpm_speed = 29700;// = 100% speed
@@ -877,7 +866,7 @@ int getFanSpeedCache(int id,int *per, int *rpm)
     return ret;
 }
 
-int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len)
+int read_device_node_binary(char *filename, char *buffer, int buf_size, int data_len)
 {
     int fd;
     int len;
@@ -911,7 +900,7 @@ int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_le
     return 0;
 }
 
-int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len)
+int read_device_node_string(char *filename, char *buffer, int buf_size, int data_len)
 {
     int ret;
 
@@ -920,7 +909,7 @@ int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_le
         return -1;
     }
 
-    ret = deviceNodeReadBinary(filename, buffer, buf_size - 1, data_len);
+    ret = read_device_node_binary(filename, buffer, buf_size - 1, data_len);
     if (ret == 0)
     {
         buffer[buf_size - 1] = '\0';

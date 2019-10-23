@@ -67,7 +67,7 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
     int isfanb2f = 0;
 
     if(fan_id <= 7){
-        getFaninfo(fan_id, info_p->model, info_p->serial,&isfanb2f);
+        get_fan_info(fan_id, info_p->model, info_p->serial,&isfanb2f);
     }else{
         int psu_id = 0;
         if(fan_id == 8){
@@ -75,12 +75,12 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
         }else if(fan_id == 9){
             psu_id = 2;
         }
-        psu_get_model_sn(psu_id, info_p->model, info_p->serial);
+        get_psu_model_sn(psu_id, info_p->model, info_p->serial);
         isfanb2f = -1;
     }
     
 
-    spd_result = getFanSpeedCache(fan_id,&(info_p->percentage), &(info_p->rpm));
+    spd_result = get_fan_speed(fan_id,&(info_p->percentage), &(info_p->rpm));
     if(spd_result){
         return ONLP_FAN_STATUS_FAILED;
     }

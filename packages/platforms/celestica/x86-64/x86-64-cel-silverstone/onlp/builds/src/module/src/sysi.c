@@ -41,7 +41,7 @@ int onlp_sysi_platform_info_get(onlp_platform_info_t *pi)
     {
         memset(fullpath, 0, PREFIX_PATH_LEN);
         sprintf(fullpath, "%s%s", SYS_CPLD_PATH, arr_cplddev_name[i]);
-        if (deviceNodeReadString(fullpath, r_data, sizeof(r_data), 0) != 0)
+        if (read_device_node_string(fullpath, r_data, sizeof(r_data), 0) != 0)
         {
             DEBUG_PRINT("%s(%d): read %s error\n", __FUNCTION__, __LINE__, fullpath);
             return ONLP_STATUS_E_INTERNAL;

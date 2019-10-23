@@ -62,7 +62,7 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
     led_id = ONLP_OID_ID_GET(id);
     *info_p = led_info[led_id];
  
-    result = getLEDStatus(led_id);
+    result = get_led_status(led_id);
 
     if(result != 0xFF)
         info_p->status |= ONLP_LED_STATUS_ON;

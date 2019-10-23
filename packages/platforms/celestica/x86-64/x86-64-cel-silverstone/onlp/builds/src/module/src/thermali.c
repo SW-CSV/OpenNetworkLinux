@@ -76,7 +76,7 @@ int onlp_thermali_info_get(onlp_oid_t id, onlp_thermal_info_t *info_p)
     memcpy(info_p, &thermal_info[thermal_id], sizeof(onlp_thermal_info_t));
 
     /* Get thermal temperature. */
-    thermal_status = getSensorInfo(thermal_id, &temp, &warn, &err, &shutdown);
+    thermal_status = get_sensor_info(thermal_id, &temp, &warn, &err, &shutdown);
     if (-1 == thermal_status)
     {
         info_p->status = ONLP_THERMAL_STATUS_FAILED;

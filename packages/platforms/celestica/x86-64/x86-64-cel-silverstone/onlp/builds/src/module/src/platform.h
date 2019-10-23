@@ -116,17 +116,17 @@ typedef struct psuInfo_p
 #define I2C_DEVICE_PATH "/sys/bus/i2c/devices/"
 #define PREFIX_PATH_ON_SYS_EEPROM "/sys/bus/i2c/devices/i2c-0/0-0056/eeprom"
 
-uint8_t getLEDStatus(int id);
-int psu_get_model_sn(int id,char* model,char* serial_number);
+uint8_t get_led_status(int id);
+int get_psu_model_sn(int id,char* model,char* serial_number);
 
-int psu_get_info(int id,int *mvin,int *mvout,int *mpin,int *mpout,int *miin,int *miout);
+int get_psu_info(int id,int *mvin,int *mvout,int *mpin,int *mpout,int *miin,int *miout);
 char* trim (char *s);
-int getFaninfo(int id,char* model,char* serial,int *getFaninfo);
-int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown);
-int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len);
-int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len);
-int getFanSpeedCache(int id,int* per,int* rpm);
-uint8_t getPsuStatus_sysfs_cpld(int id);
+int get_fan_info(int id,char* model,char* serial,int *get_fan_info);
+int get_sensor_info(int id, int *temp, int *warn, int *error, int *shutdown);
+int read_device_node_binary(char *filename, char *buffer, int buf_size, int data_len);
+int read_device_node_string(char *filename, char *buffer, int buf_size, int data_len);
+int get_fan_speed(int id,int* per,int* rpm);
+uint8_t get_psu_status(int id);
 int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_map_data *shared_mem);
 int fill_shared_memory(const char *shm_path, const char *sem_path, const char *cache_path);
 int open_file(const char *shm_path, const char *sem_path, char **cache_data, int *cache_size);
