@@ -124,11 +124,11 @@ int onlp_sysi_oids_get(onlp_oid_t *table, int max)
         *e++ = ONLP_LED_ID_CREATE(i);
 
     // // /* THERMALs Item */
-    for (i = 1; i <= THERMAL_COUNT; i++)
+    for (i = 1; i <= CHASSIS_THERMAL_COUNT; i++)
         *e++ = ONLP_THERMAL_ID_CREATE(i);
 
     // /* Fans Item */
-    for (i = 1; i <= FAN_COUNT; i++)
+    for (i = 1; i <= CHASSIS_FAN_COUNT; i++)
         *e++ = ONLP_FAN_ID_CREATE(i);
 
     return ONLP_STATUS_OK;

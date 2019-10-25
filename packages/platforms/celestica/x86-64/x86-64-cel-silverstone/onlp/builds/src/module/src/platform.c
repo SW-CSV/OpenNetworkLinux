@@ -499,7 +499,11 @@ int get_psu_model_sn(int id, char *model, char *serial_number)
                 index++;
             }
             if(flag == 1){
-                if (strstr(content, "Board Product")) {
+                if (strstr(content, "Device not present")) {
+                    index++;
+                    flag=0;
+                }
+                else if (strstr(content, "Board Product")) {
                     token = strtok(content, ":");
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
@@ -602,7 +606,11 @@ int get_fan_info(int id, char *model, char *serial, int *isfanb2f)
                 index++;
             }
             if(flag == 1){
-                if (strstr(content, "Board Serial")) {
+                if (strstr(content, "Device not present")) {
+                    index++;
+                    flag=0;
+                }
+                else if (strstr(content, "Board Serial")) {
                     token = strtok(content, ":");
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
@@ -667,8 +675,8 @@ int get_sensor_info(int id, int *temp, int *warn, int *error, int *shutdown)
     char *token = NULL;
     char *Thermal_sensor_name[13] = {
         "TEMP_CPU", "TEMP_BB", "TEMP_SW_U16", "TEMP_SW_U52",
-        "TEMP_FAN_U17", "TEMP_FAN_U52", "PSU1_Temp1", "PSU1_Temp2",
-        "PSU2_Temp1", "PSU2_Temp2","SW_U04_Temp","SW_U14_Temp","SW_U4403_Temp"};
+        "TEMP_FAN_U17", "TEMP_FAN_U52","SW_U04_Temp","SW_U14_Temp","SW_U4403_Temp",
+        "PSU1_Temp1", "PSU1_Temp2","PSU2_Temp1", "PSU2_Temp2"};
 
 	if((NULL == temp) || (NULL == warn) || (NULL == error) || (NULL == shutdown))
 	{

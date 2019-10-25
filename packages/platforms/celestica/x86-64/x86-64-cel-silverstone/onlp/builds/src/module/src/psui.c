@@ -37,7 +37,7 @@ int onlp_psui_init(void)
 
 int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 {
-    int psu_id;
+    int psu_id,psu_offset=0;;
     psu_id = ONLP_OID_ID_GET(id);
     *info_p = psu_info[psu_id];
 
@@ -68,6 +68,16 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
     if((info_p->mvin == 0) && (info_p->mpin == 0) && (info_p->miin == 0)){
         info_p->status |= ONLP_PSU_STATUS_UNPLUGGED;
     }
+
+    if(psu_id == 1){
+        psu_offset = 1;
+    }else if(psu_id == 2){
+        psu_offset = 3;
+    }
+
+    info_p->hdr.coids[0] = ONLP_THERMAL_ID_CREATE(psu_offset + CHASSIS_THERMAL_COUNT);
+    info_p->hdr.coids[1] = ONLP_THERMAL_ID_CREATE(psu_offset+1 + CHASSIS_THERMAL_COUNT);
+    info_p->hdr.coids[2] = ONLP_FAN_ID_CREATE(psu_id + CHASSIS_FAN_COUNT);
 
     return ONLP_STATUS_OK;
 }

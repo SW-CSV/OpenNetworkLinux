@@ -6,6 +6,7 @@
 
 //FAN
 #define FAN_COUNT   9
+#define CHASSIS_FAN_COUNT 7
 
 //PSU
 #define PSU_COUNT 2
@@ -15,6 +16,7 @@
 //THERMAL
 #define THERMAL_COUNT 13
 #define THERMAL_REGISTER 0xA176
+#define CHASSIS_THERMAL_COUNT 9
 
 //ALARM
 #define ALARM_REGISTER 0xA163
