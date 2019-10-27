@@ -119,13 +119,22 @@ rm -f $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 cp $rootdir/mnt/onie-boot/onie/grub/grub_backup.cfg $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg 2> /dev/null || :
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grub_extra_backup.cfg
 
+#Remove old CLS-DIAG-OS grub from old grub-extra.cfg
+STARTEX_POS_LINE=$(cat $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg | grep -n "## Begin CLS-DIAG-OS in grub-extra.cfg" | head -n 1 | cut -d: -f1)
+LASTEX_POS_LINE=$(cat $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg | grep -n "## End CLS-DIAG-OS in grub-extra.cfg" | tail -n 1 | cut -d: -f1)
+if [ $LASTEX_POS_LINE -gt 1 ]; then
+  sed $(($STARTEX_POS_LINE)),$(($LASTEX_POS_LINE))d $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
+fi
+
+#Create custom CLS-DIAG-OS option in grub-extra.cfg
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 echo "Installing Diag OS grub grub-extra.cfg ....."
+echo "$(echo "## End CLS-DIAG-OS in grub-extra.cfg" | cat - $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 cat /tmp/grub_tmp | cat - $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 echo "$(echo "function diag_bootcmd {" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 echo "$(echo diag_menu=\"CLS Diag OS\" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
-echo "$(echo "## Begin grub-extra.cfg" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
+echo "$(echo "## Begin CLS-DIAG-OS in grub-extra.cfg" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 rm -f $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 
 #Get boot order before create new one.
