@@ -111,7 +111,8 @@ fi
 STARTEX_POS_LINE=$(cat $rootdir/mnt/onie-boot/grub/grubNEW.cfg | grep -n "# begin: diag boot command" | head -n 1 | cut -d: -f1)
 LASTEX_POS_LINE=$(cat $rootdir/mnt/onie-boot/grub/grubNEW.cfg | grep -n "# end: diag boot command" | head -n 1 | cut -d: -f1)
 if [ $STARTEX_POS_LINE -gt 1 ]; then
-  sed $(($STARTEX_POS_LINE+1)),$(($LASTEX_POS_LINE-1))d $rootdir/mnt/onie-boot/grub/grubNEW.cfg > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+  sed $(($STARTEX_POS_LINE+1)),$(($LASTEX_POS_LINE-1))d $rootdir/mnt/onie-boot/grub/grubNEW.cfg > /tmp/new_clean_grub_tmp
+  cat /tmp/new_clean_grub_tmp > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 fi
 
 cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grub_backup.cfg
