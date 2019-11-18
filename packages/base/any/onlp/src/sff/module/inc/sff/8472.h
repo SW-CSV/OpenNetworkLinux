@@ -209,6 +209,9 @@
 #define SFF8472_MEDIA_XGE_ER(idprom)            \
     ((idprom[3] & SFF8472_CC3_XGE_BASE_ER) != 0)
 
+#define SFF8472_MEDIA_LENGTH_ZX(idprom)            \
+    (idprom[14] >= 70)
+
 /*
  * some CR cables identify as infiniband copper
  * some CR cables identify as FC twinax
@@ -960,6 +963,21 @@ _sff8472_sfp_10g_aoc_length(const uint8_t *idprom)
         return _sff8472_length_cu(idprom);
 
     return -1;
+}
+
+/*
+ * Identify 10G Base T SFP
+ */
+static inline int
+_sff8472_sfp_10g_base_t(const uint8_t *idprom)
+{
+    /* module should be sfp */
+    if (!SFF8472_MODULE_SFP(idprom)) return 0;
+
+    if (idprom[2] != SFF8472_CONN_RJ45) return 0;
+    if ((idprom[12] >= 0x64) && (idprom[12] <= 0x67)) return 1;
+
+    return 0;
 }
 
 /*
