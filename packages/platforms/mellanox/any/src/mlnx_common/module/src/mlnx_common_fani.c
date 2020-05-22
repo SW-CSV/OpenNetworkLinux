@@ -31,6 +31,9 @@
 #include "mlnx_common/mlnx_common.h"
 #include "mlnx_common_log.h"
 
+#define PREFIX_PATH        "/bsp/fan/"
+#define PREFIX_MODULE_PATH "/bsp/module/"
+
 #define FAN_STATUS_OK  1
 
 #define VALIDATE(_id)                           \
@@ -91,11 +94,11 @@ _onlp_fani_read_fan_eeprom(int local_id, onlp_fan_info_t* info)
 
     /* Reading serial number */
     offset = data[block1_start] * multiplier + serial_offset;
-    aim_strlcpy(info->serial, (char *)&data[offset], serial_len);
+    strncpy(info->serial, (char *)&data[offset], serial_len);
 
     /* Reading part number */
     offset += serial_len;
-    aim_strlcpy(info->model, (char *)&data[offset], part_len);
+    strncpy(info->model, (char *)&data[offset], part_len);
 
     /* Reading fan direction */
     if (data[block2_start + 1] != block2_type) {
@@ -127,7 +130,7 @@ _onlp_fani_info_get_fan(int local_id, onlp_fan_info_t* info)
     const char fan_model[]=FAN_MODEL;
     mlnx_platform_info_t* mlnx_platform_info = get_platform_info();
     if(mlnx_platform_info->fan_type == FAN_TYPE_NO_EEPROM)
-        aim_strlcpy(info->model, fan_model, sizeof(info->model));
+        strncpy(info->model, fan_model, sizeof(info->model));
 
     if(!mlnx_platform_info->fan_fixed) {
       /* not fixed FAN's can have more than 1 FAN per FRU.
@@ -141,7 +144,7 @@ _onlp_fani_info_get_fan(int local_id, onlp_fan_info_t* info)
         /* get fan status */
         fru_index = (local_id + mlnx_platform_info->fan_per_module -1) / mlnx_platform_info->fan_per_module;
 
-        ret = onlp_file_read_int(&r_val, "%s/%s", THERMAL_PATH, mlnx_platform_info->fan_fnames[fru_index].status);
+        ret = onlp_file_read_int(&r_val, "%s%s", PREFIX_MODULE_PATH, mlnx_platform_info->fan_fnames[fru_index].status);
         if (ret < 0) {
             return ONLP_STATUS_E_INTERNAL;
         }
@@ -155,7 +158,7 @@ _onlp_fani_info_get_fan(int local_id, onlp_fan_info_t* info)
     info->status |= ONLP_FAN_STATUS_PRESENT;
 
     /* get fan speed */
-    ret = onlp_file_read_int(&r_val, "%s/%s", THERMAL_PATH, mlnx_platform_info->fan_fnames[local_id].r_speed_get);
+    ret = onlp_file_read_int(&r_val, "%s%s", PREFIX_PATH, mlnx_platform_info->fan_fnames[local_id].r_speed_get);
     if (ret < 0) {
         return ONLP_STATUS_E_INTERNAL;
     }
@@ -169,14 +172,14 @@ _onlp_fani_info_get_fan(int local_id, onlp_fan_info_t* info)
 
     if (ONLP_FAN_CAPS_GET_PERCENTAGE & info->caps) {
         /* get fan min speed */
-        ret = onlp_file_read_int(&r_val, "%s/%s", THERMAL_PATH, mlnx_platform_info->fan_fnames[local_id].min);
+        ret = onlp_file_read_int(&r_val, "%s%s", PREFIX_PATH, mlnx_platform_info->fan_fnames[local_id].min);
         if (ret < 0) {
             return ONLP_STATUS_E_INTERNAL;
         }
         mlnx_platform_info->min_fan_speed[local_id] = r_val;
 
         /* get fan max speed */
-        ret = onlp_file_read_int(&r_val, "%s/%s", THERMAL_PATH, mlnx_platform_info->fan_fnames[local_id].max);
+        ret = onlp_file_read_int(&r_val, "%s%s", PREFIX_PATH, mlnx_platform_info->fan_fnames[local_id].max);
         if (ret < 0) {
             return ONLP_STATUS_E_INTERNAL;
         }
@@ -211,7 +214,7 @@ _onlp_fani_info_get_fan_on_psu(int local_id, int psu_id, onlp_fan_info_t* info)
     mlnx_platform_info_t* mlnx_platform_info = get_platform_info();
     /* get fan status
     */
-    ret = onlp_file_read_int(&r_val, "%s/%s", THERMAL_PATH, mlnx_platform_info->fan_fnames[local_id].status);
+    ret = onlp_file_read_int(&r_val, "%s%s", PREFIX_MODULE_PATH, mlnx_platform_info->fan_fnames[local_id].status);
     if (ret < 0) {
         return ONLP_STATUS_E_INTERNAL;
     }
@@ -225,7 +228,7 @@ _onlp_fani_info_get_fan_on_psu(int local_id, int psu_id, onlp_fan_info_t* info)
 
     /* get fan speed
     */
-    ret = onlp_file_read_int(&r_val, "%s/%s", THERMAL_PATH, mlnx_platform_info->fan_fnames[local_id].r_speed_get);
+    ret = onlp_file_read_int(&r_val, "%s%s", PREFIX_PATH, mlnx_platform_info->fan_fnames[local_id].r_speed_get);
     if (ret < 0) {
         return ONLP_STATUS_E_INTERNAL;
     }
@@ -322,7 +325,7 @@ onlp_fani_rpm_set(onlp_oid_t id, int rpm)
 
     snprintf(r_data, sizeof(r_data), "%d", (int)temp);
     nbytes = strnlen(r_data, sizeof(r_data));
-    rv = onlp_file_write((uint8_t*)r_data, nbytes, "%s/%s", THERMAL_PATH,
+    rv = onlp_file_write((uint8_t*)r_data, nbytes, "%s%s", PREFIX_PATH,
                          mlnx_platform_info->fan_fnames[local_id].r_speed_set);
     if (rv < 0) {
         return ONLP_STATUS_E_INTERNAL;
@@ -375,7 +378,7 @@ onlp_fani_percentage_set(onlp_oid_t id, int p)
 
     snprintf(r_data, sizeof(r_data), "%d", (int)temp);
     nbytes = strnlen(r_data, sizeof(r_data));
-    rv = onlp_file_write((uint8_t*)r_data, nbytes, "%s/%s", THERMAL_PATH,
+    rv = onlp_file_write((uint8_t*)r_data, nbytes, "%s%s", PREFIX_PATH,
                          mlnx_platform_info->fan_fnames[local_id].r_speed_set);
     if (rv < 0) {
         return ONLP_STATUS_E_INTERNAL;
@@ -391,7 +394,7 @@ onlp_fani_get_min_rpm(int id)
 
     mlnx_platform_info_t* mlnx_platform_info = get_platform_info();
 
-    if (onlp_file_read_int(&r_val, "%s/%s", THERMAL_PATH, mlnx_platform_info->fan_fnames[id].min) < 0)
+    if (onlp_file_read_int(&r_val, "%s%s", PREFIX_PATH, mlnx_platform_info->fan_fnames[id].min) < 0)
         return ONLP_STATUS_E_INTERNAL;
 
     return r_val;

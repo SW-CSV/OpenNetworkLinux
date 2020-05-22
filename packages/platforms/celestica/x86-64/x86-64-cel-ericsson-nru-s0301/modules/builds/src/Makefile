@@ -1,0 +1,1 @@
+obj-m := mc24lc64t.o optoe.o 

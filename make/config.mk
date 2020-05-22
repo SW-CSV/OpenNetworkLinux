@@ -89,5 +89,3 @@ ONL_MAKE := $(MAKE) $(ONL_MAKE_FLAGS)
 #
 export SUBMODULE_INFRA := $(ONL)/sm/infra
 export SUBMODULE_BIGCODE := $(ONL)/sm/bigcode
-
-include $(ONL)/make/templates.mk

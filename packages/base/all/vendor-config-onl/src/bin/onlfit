@@ -7,7 +7,7 @@ fi
 
 ARCH=`uname -m`
 case $ARCH in
-    armv7l|armhf|ppc)
+    armv7l|ppc)
     ;;
     *)
     echo "This script cannot be used on $ARCH platforms."

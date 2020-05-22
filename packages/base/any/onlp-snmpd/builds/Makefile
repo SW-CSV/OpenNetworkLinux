@@ -24,9 +24,10 @@ GLOBAL_CFLAGS += -DSNMP_SUBAGENT_CONFIG_AGENT_NAME=\"onlp-snmpd\"
 GLOBAL_CFLAGS += -DSNMP_SUBAGENT_CONFIG_AGENT_DESCRIPTION="\"ONLP SNMP Agent\""
 GLOBAL_CFLAGS += -g
 
-$(eval $(call onlpm_find_file,LIBONLP,onlp:$(ARCH),libonlp.so))
+LIBONLP := $(shell $(ONLPM) --find-file onlp:$(ARCH) libonlp.so)
 
 GLOBAL_LINK_LIBS += -lpthread $(LIBONLP)
 GLOBAL_LINK_LIBS += -Wl,--unresolved-symbols=ignore-in-shared-libs
 
 .DEFAULT_GOAL := onlp-snmpd
+

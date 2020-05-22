@@ -32,12 +32,12 @@
  * @{
  *
  ***********************************************************/
-#ifndef __ARM_ACCTON_AS4610_PORTING_H__
-#define __ARM_ACCTON_AS4610_PORTING_H__
+#ifndef __ONLPSIM_PORTING_H__
+#define __ONLPSIM_PORTING_H__
 
 
 /* <auto.start.portingmacro(ALL).define> */
-#if ARM_ACCTON_AS4610_CONFIG_PORTING_INCLUDE_STDLIB_HEADERS == 1
+#if ONLPSIM_CONFIG_PORTING_INCLUDE_STDLIB_HEADERS == 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,78 +45,88 @@
 #include <memory.h>
 #endif
 
-#ifndef ARM_ACCTON_AS4610_MALLOC
+#ifndef ONLPSIM_MALLOC
     #if defined(GLOBAL_MALLOC)
-        #define ARM_ACCTON_AS4610_MALLOC GLOBAL_MALLOC
-    #elif ARM_ACCTON_AS4610_CONFIG_PORTING_STDLIB == 1
-        #define ARM_ACCTON_AS4610_MALLOC malloc
+        #define ONLPSIM_MALLOC GLOBAL_MALLOC
+    #elif ONLPSIM_CONFIG_PORTING_STDLIB == 1
+        #define ONLPSIM_MALLOC malloc
     #else
-        #error The macro ARM_ACCTON_AS4610_MALLOC is required but cannot be defined.
+        #error The macro ONLPSIM_MALLOC is required but cannot be defined.
     #endif
 #endif
 
-#ifndef ARM_ACCTON_AS4610_FREE
+#ifndef ONLPSIM_FREE
     #if defined(GLOBAL_FREE)
-        #define ARM_ACCTON_AS4610_FREE GLOBAL_FREE
-    #elif ARM_ACCTON_AS4610_CONFIG_PORTING_STDLIB == 1
-        #define ARM_ACCTON_AS4610_FREE free
+        #define ONLPSIM_FREE GLOBAL_FREE
+    #elif ONLPSIM_CONFIG_PORTING_STDLIB == 1
+        #define ONLPSIM_FREE free
     #else
-        #error The macro ARM_ACCTON_AS4610_FREE is required but cannot be defined.
+        #error The macro ONLPSIM_FREE is required but cannot be defined.
     #endif
 #endif
 
-#ifndef ARM_ACCTON_AS4610_MEMSET
+#ifndef ONLPSIM_MEMSET
     #if defined(GLOBAL_MEMSET)
-        #define ARM_ACCTON_AS4610_MEMSET GLOBAL_MEMSET
-    #elif ARM_ACCTON_AS4610_CONFIG_PORTING_STDLIB == 1
-        #define ARM_ACCTON_AS4610_MEMSET memset
+        #define ONLPSIM_MEMSET GLOBAL_MEMSET
+    #elif ONLPSIM_CONFIG_PORTING_STDLIB == 1
+        #define ONLPSIM_MEMSET memset
     #else
-        #error The macro ARM_ACCTON_AS4610_MEMSET is required but cannot be defined.
+        #error The macro ONLPSIM_MEMSET is required but cannot be defined.
     #endif
 #endif
 
-#ifndef ARM_ACCTON_AS4610_MEMCPY
+#ifndef ONLPSIM_MEMCPY
     #if defined(GLOBAL_MEMCPY)
-        #define ARM_ACCTON_AS4610_MEMCPY GLOBAL_MEMCPY
-    #elif ARM_ACCTON_AS4610_CONFIG_PORTING_STDLIB == 1
-        #define ARM_ACCTON_AS4610_MEMCPY memcpy
+        #define ONLPSIM_MEMCPY GLOBAL_MEMCPY
+    #elif ONLPSIM_CONFIG_PORTING_STDLIB == 1
+        #define ONLPSIM_MEMCPY memcpy
     #else
-        #error The macro ARM_ACCTON_AS4610_MEMCPY is required but cannot be defined.
+        #error The macro ONLPSIM_MEMCPY is required but cannot be defined.
     #endif
 #endif
 
-#ifndef ARM_ACCTON_AS4610_VSNPRINTF
+#ifndef ONLPSIM_STRNCPY
+    #if defined(GLOBAL_STRNCPY)
+        #define ONLPSIM_STRNCPY GLOBAL_STRNCPY
+    #elif ONLPSIM_CONFIG_PORTING_STDLIB == 1
+        #define ONLPSIM_STRNCPY strncpy
+    #else
+        #error The macro ONLPSIM_STRNCPY is required but cannot be defined.
+    #endif
+#endif
+
+#ifndef ONLPSIM_VSNPRINTF
     #if defined(GLOBAL_VSNPRINTF)
-        #define ARM_ACCTON_AS4610_VSNPRINTF GLOBAL_VSNPRINTF
-    #elif ARM_ACCTON_AS4610_CONFIG_PORTING_STDLIB == 1
-        #define ARM_ACCTON_AS4610_VSNPRINTF vsnprintf
+        #define ONLPSIM_VSNPRINTF GLOBAL_VSNPRINTF
+    #elif ONLPSIM_CONFIG_PORTING_STDLIB == 1
+        #define ONLPSIM_VSNPRINTF vsnprintf
     #else
-        #error The macro ARM_ACCTON_AS4610_VSNPRINTF is required but cannot be defined.
+        #error The macro ONLPSIM_VSNPRINTF is required but cannot be defined.
     #endif
 #endif
 
-#ifndef ARM_ACCTON_AS4610_SNPRINTF
+#ifndef ONLPSIM_SNPRINTF
     #if defined(GLOBAL_SNPRINTF)
-        #define ARM_ACCTON_AS4610_SNPRINTF GLOBAL_SNPRINTF
-    #elif ARM_ACCTON_AS4610_CONFIG_PORTING_STDLIB == 1
-        #define ARM_ACCTON_AS4610_SNPRINTF snprintf
+        #define ONLPSIM_SNPRINTF GLOBAL_SNPRINTF
+    #elif ONLPSIM_CONFIG_PORTING_STDLIB == 1
+        #define ONLPSIM_SNPRINTF snprintf
     #else
-        #error The macro ARM_ACCTON_AS4610_SNPRINTF is required but cannot be defined.
+        #error The macro ONLPSIM_SNPRINTF is required but cannot be defined.
     #endif
 #endif
 
-#ifndef ARM_ACCTON_AS4610_STRLEN
+#ifndef ONLPSIM_STRLEN
     #if defined(GLOBAL_STRLEN)
-        #define ARM_ACCTON_AS4610_STRLEN GLOBAL_STRLEN
-    #elif ARM_ACCTON_AS4610_CONFIG_PORTING_STDLIB == 1
-        #define ARM_ACCTON_AS4610_STRLEN strlen
+        #define ONLPSIM_STRLEN GLOBAL_STRLEN
+    #elif ONLPSIM_CONFIG_PORTING_STDLIB == 1
+        #define ONLPSIM_STRLEN strlen
     #else
-        #error The macro ARM_ACCTON_AS4610_STRLEN is required but cannot be defined.
+        #error The macro ONLPSIM_STRLEN is required but cannot be defined.
     #endif
 #endif
 
 /* <auto.end.portingmacro(ALL).define> */
 
 
-#endif /* __ARM_ACCTON_AS4610_PORTING_H__ */
+#endif /* __ONLPSIM_PORTING_H__ */
 /* @} */

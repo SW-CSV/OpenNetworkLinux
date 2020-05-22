@@ -26,7 +26,6 @@
 #include <onlp/platformi/fani.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <limits.h>
 #include "platform_lib.h"
 #include "arm_accton_as4610_int.h"
 
@@ -124,7 +123,7 @@ _onlp_fani_info_get_fan(int local_id, onlp_fan_info_t* info)
 {
     int   fd, len, nbytes = 10;
     char  r_data[10]   = {0};
-    char  fullpath[PATH_MAX] = {0};
+    char  fullpath[65] = {0};
 
     /* get fan fault status (turn on when any one fails)
      */
@@ -133,7 +132,7 @@ _onlp_fani_info_get_fan(int local_id, onlp_fan_info_t* info)
     if (atoi(r_data) > 0) {
         info->status |= ONLP_FAN_STATUS_FAILED;
         return ONLP_STATUS_OK;
-    }
+    }  
 
     /* get fan speed
      */
@@ -153,7 +152,7 @@ _onlp_fani_info_get_fan_on_psu(int local_id, onlp_fan_info_t* info)
     int   psu_id;
     int   fd, len, nbytes = 10;
     char  r_data[10]   = {0};
-    char  fullpath[PATH_MAX] = {0};
+    char  fullpath[80] = {0};
     psu_type_t psu_type;
 
     /* get fan fault status
@@ -216,7 +215,7 @@ onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t* info)
     if (chassis_fan_count() == 0) {
         local_id += 1;
     }
-
+    
     *info = linfo[local_id];
 
     switch (local_id)
@@ -264,7 +263,7 @@ onlp_fani_percentage_set(onlp_oid_t id, int p)
 {
     int  fd, len, nbytes=10, local_id;
     char data[10] = {0};
-    char fullpath[PATH_MAX] = {0};
+    char fullpath[70] = {0};
 
     VALIDATE(id);
 
@@ -348,3 +347,4 @@ onlp_fani_ioctl(onlp_oid_t id, va_list vargs)
 {
     return ONLP_STATUS_E_UNSUPPORTED;
 }
+

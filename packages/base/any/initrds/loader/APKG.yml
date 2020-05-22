@@ -7,7 +7,6 @@
 ############################################################
 prerequisites:
   packages: [ "onl-buildroot-initrd:$ARCH", "onl-loader-initrd-files:all" ]
-  stage: 3
 
 common:
   arch: $ARCH
@@ -26,3 +25,7 @@ packages:
       builds/manifest.json : $$PKG_INSTALL/
 
     changelog:  Change changes changes.,
+
+
+
+
