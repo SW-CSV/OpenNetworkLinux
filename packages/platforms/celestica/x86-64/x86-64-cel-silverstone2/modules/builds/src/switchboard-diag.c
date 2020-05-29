@@ -31,6 +31,12 @@
  *
  */
 
+/* 
+    v1.0.1: 05/15/2020 
+            Fixed the issue of Array length, char clone[size]; -> char clone[size+1];
+            set_fpga_reg_value()/cpldX_setreg_store()
+*/
+
 #include <linux/interrupt.h>
 #include <linux/module.h>
 #include <linux/pci.h>
@@ -54,7 +60,7 @@
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
 
-#define MOD_VERSION "1.0.0"
+#define MOD_VERSION "1.0.1"
 #define FPGA_PCI_DEVICE_ID      0x7021
 #define FPGA_PCI_BAR_NUM        0
 #define SWITCH_CPLD_ADAP_NUM    4
@@ -371,7 +377,7 @@ static ssize_t set_fpga_reg_value(struct device *dev, struct device_attribute *d
     uint32_t value;
     uint32_t mode = 8;
     char *tok;
-    char clone[count];
+    char clone[count+1];
     char *pclone = clone;
     char *last;
 
@@ -549,7 +555,7 @@ static ssize_t cpld1_setreg_store(struct device *dev, struct device_attribute *a
     uint8_t addr, value;
     struct i2c_client *client = fpga_data->cpld_i2c_clients[0];
     char *tok;
-    char clone[size];
+    char clone[size+1];
     char *pclone = clone;
     char *last;
     int err;
@@ -650,7 +656,7 @@ static ssize_t cpld2_setreg_store(struct device *dev, struct device_attribute *a
     uint8_t addr, value;
     struct i2c_client *client = fpga_data->cpld_i2c_clients[1];
     char *tok;
-    char clone[size];
+    char clone[size+1];
     char *pclone = clone;
     char *last;
     int err;

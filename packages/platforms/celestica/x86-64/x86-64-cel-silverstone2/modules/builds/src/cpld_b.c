@@ -8,7 +8,11 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  */
-
+/* 
+    v1.0.1: 
+            Fixed the issue of Array length, char clone[count]; -> char clone[count+1];
+            setreg_store() and so on
+*/
 #include <linux/interrupt.h>
 #include <linux/module.h>
 #include <linux/pci.h>
@@ -139,7 +143,7 @@ static ssize_t setreg_store(struct device *dev, struct device_attribute *devattr
     uint16_t addr;
     uint8_t value;
     char *tok;
-    char clone[count];
+    char clone[count+1];
     char *pclone = clone;
     char *last;
 
@@ -335,7 +339,7 @@ static ssize_t psu_led_show(struct device *dev, struct device_attribute *devattr
 static ssize_t psu_led_store(struct device *dev, struct device_attribute *devattr,
                 const char *buf, size_t count)
 {
-    char clone[count];
+    char clone[count+1];
     char *pclone = clone;
     char *tok;
     char *last;
@@ -417,7 +421,7 @@ static ssize_t led_control_store(struct device *dev, struct device_attribute *de
     uint8_t value;
     uint16_t addr;
     char *tok;
-    char clone[count];
+    char clone[count+1];
     char *pclone = clone;
     char *last;
 
@@ -573,5 +577,5 @@ module_exit(cpld_b_exit);
 
 MODULE_AUTHOR("Celestica Inc.");
 MODULE_DESCRIPTION("Celestica Silverstone2 CPLD baseboard driver");
-MODULE_VERSION("1.0.0");
+MODULE_VERSION("1.0.1");
 MODULE_LICENSE("GPL");
