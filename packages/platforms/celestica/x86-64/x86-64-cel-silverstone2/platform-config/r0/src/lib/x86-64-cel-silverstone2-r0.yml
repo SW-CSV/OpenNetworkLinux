@@ -10,6 +10,9 @@ x86-64-cel-silverstone2-r0:
 
   grub:
 
+    diagos: >-
+      yes
+    
     serial: >-
       --port=0x3f8
       --speed=115200
