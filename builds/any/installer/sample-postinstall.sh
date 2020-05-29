@@ -196,7 +196,7 @@ echo "Create dummy partition for CLS Diag OS for prevent being destroy by onie-u
 #     exit 0
 # fi
 START_POS=$(sgdisk -f /dev/sda)
-END_POS=$((($START_POS+2048)*2))
+END_POS=$(($START_POS+4096))
 LAST_PARTITION_NUMBER=$(sgdisk -p /dev/sda | grep $(($START_POS-1)) | awk '{print $1}')
 NEW_PARTITION_NUMBER=$((LAST_PARTITION_NUMBER+1))
 sgdisk -n $NEW_PARTITION_NUMBER:$START_POS:$END_POS -t $NEW_PARTITION_NUMBER:0700 /dev/sda
