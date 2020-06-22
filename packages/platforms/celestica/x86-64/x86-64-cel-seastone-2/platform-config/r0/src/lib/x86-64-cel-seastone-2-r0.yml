@@ -18,7 +18,7 @@ x86-64-cel-seastone-2-r0:
 
     args: >-
       nopat
-      console=ttyS0,115200n8
+      console=ttyS0,9600n8
       earlycon=uart8250,mmio,0xdff9b000
       intel_iommu=off
 
