@@ -70,8 +70,8 @@ static const struct search_psu_sdr_info_mapper search_psu_sdr_info[12] = {
 };
 
 char *Thermal_sensor_name[THERMAL_COUNT] = {
-    "Base_Temp_U5", "Base_Temp_U7", "CPU_Temp", "Switch_Temp_U1",
-    "Switch_Temp_U18", "Switch_Temp_U28", "Switch_Temp_U29", "PSUL_Temp1",
+    "Base_Temp_U5", "Base_Temp_U7", "CPU_Temp", "Switch_Temp_U30",
+    "Switch_Temp_U31", "Switch_Temp_U28", "Switch_Temp_U29", "PSUL_Temp1",
     "PSUL_Temp2", "PSUR_Temp1", "PSUR_Temp2","Switch_U21_Temp","Switch_U33_Temp"};
 
 int write_to_dump(uint8_t dev_reg)

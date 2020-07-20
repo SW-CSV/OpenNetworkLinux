@@ -61,10 +61,10 @@ cel_questone_2_sfp_qsfp_get_port_path(int port, char *node_name)
 {
 
     if(port <= qsfp_count__ + sfp_count__){
-        if(port<=qsfp_count__){
-            sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port);
+        if(port<=sfp_count__){
+            sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port);
         }else{
-            sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port-qsfp_count__);
+            sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port-sfp_count__);
         }
     }else{
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
@@ -79,10 +79,10 @@ cel_questone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
 {
 
     if(port <= qsfp_count__ + sfp_count__){
-        if(port<=qsfp_count__){
-            sprintf(node_path, "%sSFF/QSFP%d/i2c/eeprom", PLATFORM_PATH, port);
+        if(port<=sfp_count__){
+            sprintf(node_path, "%sSFF/SFP%d/i2c/eeprom", PLATFORM_PATH, port);
         }else{
-            sprintf(node_path, "%sSFF/SFP%d/i2c/eeprom", PLATFORM_PATH, port-qsfp_count__);
+            sprintf(node_path, "%sSFF/QSFP%d/i2c/eeprom", PLATFORM_PATH, port-sfp_count__);
         }
     }else{
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
