@@ -503,17 +503,17 @@ int get_psu_model_sn(int id, char *model, char *serial_number)
                     index++;
                     flag=0;
                 }
-                else if (strstr(content, "Board Product")) {
-                    token = strtok(content, ":");
-                    token = strtok(NULL, ":");
-                    char* trim_token = trim(token);
-                    sprintf(psu_information[index].model,"%s",trim_token);
-                }
                 else if (strstr(content, "Board Serial")) {
                     token = strtok(content, ":");
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
                     sprintf(psu_information[index].serial_number,"%s",trim_token);
+                }
+                else if (strstr(content, "Board Part Number")) {
+                    token = strtok(content, ":");
+                    token = strtok(NULL, ":");
+                    char* trim_token = trim(token);
+                    sprintf(psu_information[index].model,"%s",trim_token);
                     flag = 0;
                     search_psu_id++;
                 }
