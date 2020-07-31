@@ -35,4 +35,43 @@ rootdir=$1; shift
 echo "Hello from preinstall"
 echo "Chroot is $rootdir"
 
+
+diskpartition=$(df | grep "onie-boot" | awk '{print $1}')
+diskname=${diskpartition:0:8}
+echo "diskname:"$diskname
+
+
+### Change parition name with -DIAG, The uninstall operation must not modify or remove this partiion.
+### clear GPT system partition attribute bit (bit 0)
+if [ ! -z $(sgdisk -p $diskname | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; then
+    sgdisk --change-name=$(sgdisk -p $diskname | grep "ONL-BOOT-DIAG" | awk '{print $1}'):"ONL-BOOT" $diskname
+    sgdisk -A $(sgdisk -p $diskname | grep "ONL-BOOT" | awk '{print $1}'):clear:0 $diskname
+fi
+if [ ! -z $(sgdisk -p $diskname | grep "ONL-CONFIG-DIAG" | awk '{print $1}') ]; then
+    sgdisk --change-name=$(sgdisk -p $diskname | grep "ONL-CONFIG-DIAG" | awk '{print $1}'):"ONL-CONFIG" $diskname
+    sgdisk -A $(sgdisk -p $diskname | grep "ONL-CONFIG" | awk '{print $1}'):clear:0 $diskname
+fi
+if [ ! -z $(sgdisk -p $diskname | grep "ONL-IMAGES-DIAG" | awk '{print $1}') ]; then
+    sgdisk --change-name=$(sgdisk -p $diskname | grep "ONL-IMAGES-DIAG" | awk ' {print $1}'):"ONL-IMAGES" $diskname
+    sgdisk -A $(sgdisk -p $diskname | grep "ONL-IMAGES" | awk '{print $1}'):clear:0 $diskname
+fi
+if [ ! -z $(sgdisk -p $diskname | grep "ONL-DATA-DIAG" | awk '{print $1}') ]; then
+    sgdisk --change-name=$(sgdisk -p $diskname | grep "ONL-DATA-DIAG" | awk '{print $1}'):"ONL-DATA" $diskname
+    sgdisk -A $(sgdisk -p $diskname | grep "ONL-DATA" | awk '{print $1}'):clear:0 $diskname
+fi
+
+## Remove Dummy partition CLS-DIAG if exist
+if [ ! -z $(sgdisk -p $diskname | grep CLS-DIAG | awk '{print $1}') ]; then
+    DUMMY_PARTITION_NUMBER=$(sgdisk -p $diskname | grep CLS-DIAG | awk '{print $1}')
+	parted $diskname rm $DUMMY_PARTITION_NUMBER
+fi
+
+## Move back the ONL efi partition for protect the conflict between install process.
+if [ -d /boot/efi/EFI/ONL-DIAG ]; then
+    mv /boot/efi/EFI/ONL-DIAG /boot/efi/EFI/ONL
+fi
+
+
+
 exit 0
+

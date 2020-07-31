@@ -1,20 +1,20 @@
 mounts:
-  ONL-IMAGES:
+  ONL-IMAGES-DIAG:
     mount: rw
     dir: /mnt/onl/images
     fsck: true
 
-  ONL-DATA:
+  ONL-DATA-DIAG:
     mount: rw
     dir: /mnt/onl/data
     fsck: true
 
-  ONL-CONFIG:
+  ONL-CONFIG-DIAG:
     mount: ro
     dir: /mnt/onl/config
     fsck: true
 
-  ONL-BOOT:
+  ONL-BOOT-DIAG:
     mount: rw
     dir: /mnt/onl/boot
     fsck: true

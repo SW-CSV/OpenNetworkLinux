@@ -27,7 +27,7 @@ class Runner(onl.install.InstallUtils.SubprocessMixin):
         self.log = log
 
         self.blkid = BlkidParser(log=self.log)
-#        self.ubinfo = UbinfoParser(log=self.log)
+        #self.ubinfo = UbinfoParser(log=self.log)
 
     def mount(self, SWI):
 

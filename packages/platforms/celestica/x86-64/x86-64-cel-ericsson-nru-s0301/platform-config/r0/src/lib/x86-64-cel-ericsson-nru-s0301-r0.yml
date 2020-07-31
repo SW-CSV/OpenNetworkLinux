@@ -25,6 +25,20 @@ x86-64-cel-ericsson-nru-s0301-r0:
       nopat
       console=ttyS0,115200n8
 
+  installer:
+  - ONL-BOOT:
+      =: 128MiB
+      format: ext4
+  - ONL-CONFIG:
+      =: 128MiB
+      format: ext4
+  - ONL-IMAGES:
+      =: 1GiB
+      format: ext4
+  - ONL-DATA:
+      =: 3GiB
+      format: ext4
+
   ##network
   ##  interfaces:
   ##    ma1:

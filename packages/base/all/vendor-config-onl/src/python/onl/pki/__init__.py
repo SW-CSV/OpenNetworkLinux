@@ -18,11 +18,11 @@ from onl.util import *
 
 class OnlPkiContextReadWrite(OnlMountContextReadWrite):
     def __init__(self, logger):
-        OnlMountContextReadWrite.__init__(self, "ONL-CONFIG", logger)
+        OnlMountContextReadWrite.__init__(self, "ONL-CONFIG-DIAG", logger)
 
 class OnlPkiContextReadOnly(OnlMountContextReadOnly):
     def __init__(self, logger):
-        OnlMountContextReadOnly.__init__(self, "ONL-CONFIG", logger)
+        OnlMountContextReadOnly.__init__(self, "ONL-CONFIG-DIAG", logger)
 
 
 class OnlPki(OnlServiceMixin):
