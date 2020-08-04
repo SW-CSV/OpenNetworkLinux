@@ -125,7 +125,7 @@ echo "Installing Diag OS grub to grub.cfg ....."
 echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 cat /tmp/grub_tmp | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg > $rootdir/mnt/onie-boot/grub/grub.cfg
 echo "$(echo "function diag_bootcmd {" | cat - $rootdir/mnt/onie-boot/grub/grub.cfg)" > $rootdir/mnt/onie-boot/grub/grub.cfg
-echo "$(echo diag_menu=\"CLS Diag OS\" | cat - $rootdir/mnt/onie-boot/grub/grub.cfg)" > $rootdir/mnt/onie-boot/grub/grub.cfg
+echo "$(echo diag_menu=\"In-Field Diag OS\" | cat - $rootdir/mnt/onie-boot/grub/grub.cfg)" > $rootdir/mnt/onie-boot/grub/grub.cfg
 rm -f $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 
 
@@ -133,22 +133,22 @@ rm -f $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 cp $rootdir/mnt/onie-boot/onie/grub/grub_backup.cfg $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg 2> /dev/null || :
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grub_extra_backup.cfg
 
-#Remove old CLS-DIAG-OS grub from old grub-extra.cfg
-STARTEX_POS_LINE=$(cat $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg | grep -n "diag_menu=\"CLS Diag OS\"" | head -n 1 | cut -d: -f1)
+#Remove old In-Field Diag OS grub from old grub-extra.cfg
+STARTEX_POS_LINE=$(cat $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg | grep -n "diag_menu=\"In-Field Diag OS\"" | head -n 1 | cut -d: -f1)
 LASTEX_POS_LINE=$(cat $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg | grep -n "ONIE_EXTRA_CMDLINE_LINUX" | head -n 1 | cut -d: -f1)
 if [ $(($LASTEX_POS_LINE-2)) -gt 1 ]; then
   sed $(($STARTEX_POS_LINE-1)),$(($LASTEX_POS_LINE-2))d $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 fi
 
-#Create custom CLS-DIAG-OS option in grub-extra.cfg
+#Create custom In-Field Diag OS option in grub-extra.cfg
 
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 echo "Installing Diag OS grub grub-extra.cfg ....."
 echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 cat /tmp/grub_tmp | cat - $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 echo "$(echo "function diag_bootcmd {" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
-echo "$(echo diag_menu=\"CLS Diag OS\" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
-echo "$(echo "## Begin CLS-DIAG-OS in grub-extra.cfg" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
+echo "$(echo diag_menu=\"In-Field Diag OS\" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
+echo "$(echo "## Begin In-Field Diag OS in grub-extra.cfg" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 rm -f $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 
 #Get boot order before create new one.
@@ -164,22 +164,22 @@ if [ -d /tmp/efi/EFI/ONL ]; then
 fi
 
 
-# boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
+# boot_num=$(efibootmgr -v | grep "In-Field Diag OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
 # boot_num_len=${#boot_num}
 # if [ $boot_num_len -eq 0 ]; then
-#     efibootmgr -c -L "CLS-DIAG-OS" -l '\EFI\ONL-DIAG\grubx64.efi'
+#     efibootmgr -c -L "In-Field Diag OS" -l '\EFI\ONL-DIAG\grubx64.efi'
 # fi
 
-# #*Reorder* move CLS-DIAG-OS to back of list.
-# boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
+# #*Reorder* move In-Field Diag OS to back of list.
+# boot_num=$(efibootmgr -v | grep "In-Field Diag OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
 # boot_num=${boot_num#Boot}
 # boot_num=${boot_num%\*}
 # new_boot_order="$(echo -n $CURRENT_BOOT_ORDER | sed -e s/,$boot_num// -e s/$boot_num,// -e s/$boot_num//)"
 # efibootmgr -o ${new_boot_order},${boot_num}
 
 
-#Remove existing CLS-DIAG-OS from boot option following new requirement
-boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
+#Remove existing In-Field Diag OS from boot option following new requirement
+boot_num=$(efibootmgr -v | grep "In-Field Diag OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
 boot_num_len=${#boot_num}
 if [ $boot_num_len -gt 0 ]; then
   boot_num=${boot_num#Boot}
@@ -191,8 +191,8 @@ fi
 echo "Copy grub-extra.cfg to diag-boocmd.cfg to prevent command disappear after Onie update ..."
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/diag-bootcmd.cfg
 
-echo "Create dummy partition for CLS Diag OS for prevent being destroy by onie-updater"
-# DUMMY_PARTITION_NUMBER_POST=$(sgdisk -p $diskname | grep CLS-DIAG | awk '{print $1}')
+echo "Create dummy partition for In-Field Diag OS for prevent being destroy by onie-updater"
+# DUMMY_PARTITION_NUMBER_POST=$(sgdisk -p $diskname | grep "ONL-ROOTFS-DIAG" | awk '{print $1}')
 # if [[ $DUMMY_PARTITION_NUMBER_POST -gt 0 ]]
 # then
 #     exit 0
@@ -202,14 +202,14 @@ END_POS=$(($START_POS+4096))
 LAST_PARTITION_NUMBER=$(sgdisk -p $diskname | grep $(($START_POS-1)) | awk '{print $1}')
 NEW_PARTITION_NUMBER=$((LAST_PARTITION_NUMBER+1))
 sgdisk -n $NEW_PARTITION_NUMBER:$START_POS:$END_POS -t $NEW_PARTITION_NUMBER:0700 $diskname
-sgdisk --change-name=$NEW_PARTITION_NUMBER:"CLS-DIAG" $diskname
-sgdisk -A $(sgdisk -p $diskname | grep "CLS-DIAG" | awk '{print $1}'):set:0 $diskname
+sgdisk --change-name=$NEW_PARTITION_NUMBER:"ONL-ROOTFS-DIAG" $diskname
+sgdisk -A $(sgdisk -p $diskname | grep "ONL-ROOTFS-DIAG" | awk '{print $1}'):set:0 $diskname
 sync
 
 partprobe $diskname
-mkfs.ext4 -v -O ^huge_file -L CLS-DIAG $diskname$NEW_PARTITION_NUMBER || {
+mkfs.ext4 -v -O ^huge_file -L ONL-ROOTFS-DIAG $diskname$NEW_PARTITION_NUMBER || {
     echo "error using ext2 instead"
-    mkfs.ext2 -v -L CLS-DIAG $diskname$NEW_PARTITION_NUMBER 
+    mkfs.ext2 -v -L ONL-ROOTFS-DIAG $diskname$NEW_PARTITION_NUMBER 
 }
 partprobe $diskname
 exit 0
