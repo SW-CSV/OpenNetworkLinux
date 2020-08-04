@@ -60,9 +60,9 @@ if [ ! -z $(sgdisk -p $diskname | grep "ONL-DATA-DIAG" | awk '{print $1}') ]; th
     sgdisk -A $(sgdisk -p $diskname | grep "ONL-DATA" | awk '{print $1}'):clear:0 $diskname
 fi
 
-## Remove Dummy partition CLS-DIAG if exist
-if [ ! -z $(sgdisk -p $diskname | grep CLS-DIAG | awk '{print $1}') ]; then
-    DUMMY_PARTITION_NUMBER=$(sgdisk -p $diskname | grep CLS-DIAG | awk '{print $1}')
+## Remove Dummy partition ONL-ROOTFS-DIAG if exist
+if [ ! -z $(sgdisk -p $diskname | grep "ONL-ROOTFS-DIAG" | awk '{print $1}') ]; then
+    DUMMY_PARTITION_NUMBER=$(sgdisk -p $diskname | grep "ONL-ROOTFS-DIAG" | awk '{print $1}')
 	parted $diskname rm $DUMMY_PARTITION_NUMBER
 fi
 

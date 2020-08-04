@@ -13,5 +13,5 @@ class OnlPlatform_x86_64_cel_ericsson_nru03_r0(OnlPlatformCelestica,
         os.system("ipmitool sdr > /tmp/onlp-sensor-cache.txt")
         os.system("ipmitool fru > /tmp/onlp-fru-cache.txt")
         os.system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt")
- 
+
         return True
