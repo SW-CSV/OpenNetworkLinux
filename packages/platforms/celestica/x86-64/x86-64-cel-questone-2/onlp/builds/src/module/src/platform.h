@@ -1,5 +1,5 @@
-#ifndef _PLATFORM_QUESTONE_H_
-#define _PLATFORM_QUESTONE_H_
+#ifndef _PLATFORM_SEASTONE_H_
+#define _PLATFORM_SEASTONE_H_
 #include <stdint.h>
 
 #define PREFIX_PATH_LEN 100
@@ -47,6 +47,8 @@
 #define PSUL_ID 1
 #define PSUR_ID 2
 
+#define NUM_OF_CPLD 1
+
 struct device_info{
 	char serial_number[256];
 	char model[256];
@@ -66,18 +68,6 @@ struct led_reg_mapper{
     uint16_t dev_reg;
 };
 
-
-
-// struct psuInfo_p
-// {
-//     unsigned int vin;
-// 	unsigned int iin;
-// 	unsigned int vout;
-// 	unsigned int iout;
-// 	unsigned int pout;
-// 	unsigned int pin;
-// 	unsigned int temp;
-// };
 struct search_psu_sdr_info_mapper{
 	char* keyword;
 	char unit;
@@ -88,25 +78,6 @@ struct search_psu_fru_info_mapper{
 	int start_index;
 	int end_index;
 };
-
-typedef struct psuInfo_p
-{
-    unsigned int lvin;
-	unsigned int liin;
-	unsigned int lvout;
-	unsigned int liout;
-	unsigned int lpout;
-	unsigned int lpin;
-	unsigned int ltemp;
-	
-	unsigned int rvin;
-	unsigned int riin;
-	unsigned int rvout;
-	unsigned int riout;
-	unsigned int rpout;
-	unsigned int rpin;
-	unsigned int rtemp;
-}psuInfo_p;
 
 #define SYS_CPLD_PATH "/sys/devices/platform/sys_cpld/"
 #define PLATFORM_PATH "/sys/devices/platform/questone2/"
@@ -131,8 +102,8 @@ char* read_psu_fru(int id);
 char* read_psu_sdr(int id);
 char* read_ipmi(char* cmd);
 int keyword_match(char* a,char *b);
-void append(char* s, char c);
 char* trim(char* a);
+void append(char* s, char c);
 int getFaninfo(int id,char* model,char* serial);
 int getThermalStatus_Ipmi(int id,int *tempc);
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len);
@@ -147,7 +118,7 @@ int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_le
 // #define THERMAL_MAIN_BOARD_FRONT    3
 // #define THERMAL_PSU1                4
 // #define THERMAL_PSU2                5
-#define DEBUG_MODE 0
+#define DEBUG_MODE 1
 
 #if (DEBUG_MODE == 1)
     #define DEBUG_PRINT(format, ...)   printf(format, __VA_ARGS__)

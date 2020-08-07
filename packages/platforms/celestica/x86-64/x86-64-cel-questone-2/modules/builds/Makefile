@@ -1,4 +1,4 @@
-KERNELS := onl-kernel-4.9-lts-x86-64-all:amd64
+KERNELS := onl-kernel-4.14-lts-x86-64-all:amd64
 #KMODULES := $(wildcard *.c)
 KMODULES := src
 VENDOR := celestica

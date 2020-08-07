@@ -21,11 +21,11 @@ static onlp_thermal_info_t thermal_info[] = {
                 ONLP_THERMAL_STATUS_PRESENT,
                 ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
             },
-    { { ONLP_THERMAL_ID_CREATE(3), "Switch_Temp_U30",   0},
+    { { ONLP_THERMAL_ID_CREATE(3), "Switch_Temp_U31",   0},
                 ONLP_THERMAL_STATUS_PRESENT,
                 ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
             },
-    { { ONLP_THERMAL_ID_CREATE(3), "Switch_Temp_U31",   0},
+    { { ONLP_THERMAL_ID_CREATE(3), "Switch_Temp_U30",   0},
                 ONLP_THERMAL_STATUS_PRESENT,
                 ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
             },

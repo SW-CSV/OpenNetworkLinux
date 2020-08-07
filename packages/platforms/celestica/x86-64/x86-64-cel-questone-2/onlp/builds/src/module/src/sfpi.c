@@ -20,12 +20,12 @@
  ************************************************************
  *
  *
- ********************************************************** */
+ ***********************************************************/
 #include <onlp/platformi/sfpi.h>
 #include <x86_64_cel_questone_2/x86_64_cel_questone_2_config.h>
 #include "x86_64_cel_questone_2_log.h"
-#include <inttypes.h>
 #include "platform.h"
+#include <inttypes.h>
 
 static int qsfp_count__ = 8;
 static int sfp_count__ = 48;
@@ -61,10 +61,10 @@ cel_questone_2_sfp_qsfp_get_port_path(int port, char *node_name)
 {
 
     if(port <= qsfp_count__ + sfp_count__){
-        if(port<=sfp_count__){
-            sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port);
+        if(port<=qsfp_count__){
+            sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port);
         }else{
-            sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port-sfp_count__);
+            sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port-qsfp_count__);
         }
     }else{
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
@@ -79,10 +79,10 @@ cel_questone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
 {
 
     if(port <= qsfp_count__ + sfp_count__){
-        if(port<=sfp_count__){
-            sprintf(node_path, "%sSFF/SFP%d/i2c/eeprom", PLATFORM_PATH, port);
+        if(port<=qsfp_count__){
+            sprintf(node_path, "%sSFF/QSFP%d/i2c/eeprom", PLATFORM_PATH, port);
         }else{
-            sprintf(node_path, "%sSFF/QSFP%d/i2c/eeprom", PLATFORM_PATH, port-sfp_count__);
+            sprintf(node_path, "%sSFF/SFP%d/i2c/eeprom", PLATFORM_PATH, port-qsfp_count__);
         }
     }else{
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
@@ -160,7 +160,7 @@ onlp_sfpi_presence_bitmap_get(onlp_sfp_bitmap_t* dst)
     uint64_t presence_all = 0;
 
 	presence_all = cel_questone_2_sfp_qsfp_get_all_ports_present();
-
+    //printf("presence_all = %d\n",presence_all);
     /* Populate bitmap */
     for(i = 0; presence_all; i++) {
         AIM_BITMAP_MOD(dst, i, (presence_all & 1));
@@ -181,7 +181,6 @@ onlp_sfpi_eeprom_read(int port, uint8_t data[256])
 
 	//sprintf(sub_path, "/%d-0050/eeprom", CHASSIS_SFP_I2C_BUS_BASE + port);
 	path= cel_questone_2_sfp_qsfp_get_eeprom_path(port + 1, "eeprom");
-
     /*
      * Read the SFP eeprom into data[]
      *

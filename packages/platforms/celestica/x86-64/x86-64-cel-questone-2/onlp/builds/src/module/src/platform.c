@@ -10,13 +10,16 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <sys/io.h>
-
+#include <time.h>
+#include <sys/stat.h>
 #include "platform.h"
 
 char command[256];
 FILE *fp;
 static char *sdr_value = NULL;
 static char *temp_sdr_value = NULL;
+const char *sdr_cache_path="/tmp/onlp-sensor-cache.txt";
+const char *fru_cache_path="/tmp/onlp-fru-cache.txt";
 
 static struct device_info fan_information[FAN_COUNT + 1] = {
     {"unknown", "unknown"}, //check
@@ -70,8 +73,8 @@ static const struct search_psu_sdr_info_mapper search_psu_sdr_info[12] = {
 };
 
 char *Thermal_sensor_name[THERMAL_COUNT] = {
-    "Base_Temp_U5", "Base_Temp_U7", "CPU_Temp", "Switch_Temp_U30",
-    "Switch_Temp_U31", "Switch_Temp_U28", "Switch_Temp_U29", "PSUL_Temp1",
+    "Base_Temp_U5", "Base_Temp_U7", "CPU_Temp", "Switch_Temp_U31",
+    "Switch_Temp_U30", "Switch_Temp_U28", "Switch_Temp_U29", "PSUL_Temp1",
     "PSUL_Temp2", "PSUR_Temp1", "PSUR_Temp2","Switch_U21_Temp","Switch_U33_Temp"};
 
 int write_to_dump(uint8_t dev_reg)
@@ -390,11 +393,51 @@ int led_mask(int start, uint8_t value)
 
     return cal;
 }
+
+static int is_cache_exist(){
+    const char *path="/tmp/onlp-sensor-cache.txt";
+    time_t current_time;
+    double diff_time;
+    struct stat fst;
+    bzero(&fst,sizeof(fst));
+
+    if (access(path, F_OK) == -1){ //Cache not exist
+        return -1;
+    }else{ //Cache exist
+        current_time = time(NULL);
+        if (stat(path,&fst) != 0) { printf("stat() failed"); exit(-1); }
+
+        diff_time = difftime(current_time,fst.st_mtime);
+
+        if(diff_time > 60){
+            return -1;
+        }
+        return 1;
+    }
+}
+
+static int create_cache(){
+    //const char *path="/tmp/onlp-sensor-cache.txt";
+
+    //  if (access(path, F_OK) == -1){ //Cache not exist
+    //     printf("rm and create new file at %s\n",path);
+    //     system("rm /tmp/onlp-sensor-cache.txt");
+    // }else{ //Cache exist
+    //     printf("just create new file at %s\n",path);
+    //     system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
+    //     system("ipmitool fru > /tmp/onlp-sensor-cache.txt");
+    // }
+    system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
+    system("ipmitool fru > /tmp/onlp-fru-cache.txt");
+    return 1;
+}
+
 char *read_fru(int fru_id)
 {
     FILE *pFd = NULL;
     char c; //,s_id[4]; //stat[5000],
     char *str = (char *)malloc(sizeof(char) * 5000);
+    memset (str, 0, sizeof (char) * 5000);
     int i = 0;
     //float marks;
     //sprintf(command,"cat /home/tdcadmin/Work/Git/seastone2-diag/onl-sysinfo/fru.txt");
@@ -414,6 +457,9 @@ char *read_fru(int fru_id)
             c = fgetc(pFd);
         }
 
+        // if(i <= 0){
+        //     str = "\0";
+        // }
         pclose(pFd);
     }
     else
@@ -431,7 +477,8 @@ char *read_psu_sdr(int id)
     char *str = (char *)malloc(sizeof(char) * 5000);
     int i = 0;
 
-    sprintf(command,"ipmitool  sdr | grep PSU");
+    if(is_cache_exist()<1){         create_cache();     }
+    sprintf(command,"cat %s | grep PSU",sdr_cache_path);
     pFd = popen(command, "r");
     if (pFd != NULL)
     {
@@ -460,6 +507,7 @@ char *read_ipmi(char *cmd)
     FILE *pFd = NULL;
     char c; //,s_id[4]; //stat[5000],
     char *str = (char *)malloc(sizeof(char) * 5000);
+    memset (str, 0, sizeof (char) * 5000);
     int i = 0;
     //float marks;
     //sprintf(command,"cat /home/tdcadmin/Work/Git/seastone2-diag/onl-sysinfo/fru.txt");
@@ -496,8 +544,8 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
     if(sdr_value == NULL){
         sdr_value = read_psu_sdr(id);
     }
-        
-    
+
+
     char ctemp[18] = "\0";
     float ftemp = 0.0;
     int str_index = 0;
@@ -518,8 +566,9 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
             if (sdr_value[status_pos] != 'n')
             {
                 int v_pos = position + 19;
+                int a =0;
                 //printf("Map the %s with %c\n",search_psu_sdr_info[str_index].keyword,search_psu_sdr_info[str_index].unit);
-                for (int a = 0; a <= 18; a++)
+                for (; a <= 18; a++)
                 {
                     //printf("%c",sdr_value[v_pos+a]);
                     // 			//if(search_psu_sdr_info[str_index].unit!=NULL){
@@ -546,6 +595,11 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
         }
     }
 
+    //free malloc after complete use sdr_value variable
+    if(id >= PSU_COUNT){
+        free(sdr_value);
+        sdr_value=NULL;
+    }
     *mvin = val[0];
     *miin = val[1];
     *mpin = val[2];
@@ -563,9 +617,10 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
     char *token;
 
     if (0 == strcasecmp(psu_information[0].model, "unknown")) {
-        
+
         index = 0;
-        sprintf(command, "ipmitool fru print | grep -A 10 FRU_PSU");
+        if(is_cache_exist()<1){         create_cache();     }
+        sprintf(command, "cat %s | grep -A 10 FRU_PSU",fru_cache_path);
         fp = popen(command, "r");
         if (fp == 0)
         {
@@ -588,12 +643,12 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
                 token = strtok(NULL, ":");
                 char* trim_token = trim(token);
                 sprintf(psu_information[index].model,"%s",trim_token);
-            
+
             }
         }
         sprintf(psu_information[0].model,"pass"); //Mark as complete
         pclose(fp);
-        
+
     }
 
     strcpy(model, psu_information[id].model);
@@ -648,7 +703,10 @@ char* read_fans_fru(){
     char *str = (char *)malloc(sizeof(char) * 5000);
     int i = 0;
 
-    sprintf(command, "ipmitool fru print | grep -A 4 FRU_FAN");
+    if(is_cache_exist()<1){
+        create_cache();
+    }
+    sprintf(command, "cat %s | grep -A 4 FRU_FAN",fru_cache_path);
     pFd = popen(command, "r");
     if (pFd != NULL)
     {
@@ -679,9 +737,10 @@ int getFaninfo(int id, char *model, char *serial)
     char *token;
 
     if (0 == strcasecmp(fan_information[0].model, "unknown")) {
-        
+
         index = 0;
-        sprintf(command, "ipmitool fru print | grep -A 10 FRU_FAN");
+        if(is_cache_exist()<1){         create_cache();     }
+        sprintf(command, "cat %s | grep -A 10 FRU_FAN",fru_cache_path);
         fp = popen(command, "r");
         if (fp == 0)
         {
@@ -704,12 +763,12 @@ int getFaninfo(int id, char *model, char *serial)
                 token = strtok(NULL, ":");
                 char* trim_token = trim(token);
                 sprintf(fan_information[index].model,"%s",trim_token);
-            
+
             }
         }
         sprintf(fan_information[0].model,"pass"); //Mark as complete
         pclose(fp);
-        
+
     }
 
     strcpy(model, fan_information[id].model);
@@ -718,49 +777,18 @@ int getFaninfo(int id, char *model, char *serial)
     return 1;
 }
 
-char *read_temp(char *name)
-{
-    FILE *pFd = NULL;
-    char c; //,s_id[4]; //stat[5000],
-    char *str = (char *)malloc(sizeof(char) * 5000);
-    int i = 0;
-    //float marks;
-    //sprintf(command,"cat /home/tdcadmin/Work/Git/seastone2-diag/onl-sysinfo/fru.txt");
-    //sprintf(s_id,"%d",id);
-
-    sprintf(command, "ipmitool sensor | grep %s ", name);
-    pFd = popen(command, "r");
-    if (pFd != NULL)
-    {
-
-        c = fgetc(pFd);
-        while (c != EOF)
-        {
-            //printf ("%c", c);
-            str[i] = c;
-            i++;
-            c = fgetc(pFd);
-        }
-
-        pclose(pFd);
-    }
-    else
-    {
-        printf("execute command %s failed\n", command);
-    }
-
-    return str;
-}
-
 int getThermalStatus_Ipmi(int id, int *tempc)
 {
-    //printf("desc = %s\n",desc);
+    //clock_t t;
+    //double time_taken;
+    //t = clock();
     char data_temp[500] = "\0";
     int position;
     char ctemp[18] = "\0";
     float ftemp = 0.0;
     if(temp_sdr_value == NULL){
-        sprintf(command, "ipmitool sdr list | grep Temp");
+        if(is_cache_exist()<1){         create_cache();     }
+        sprintf(command, "cat %s | grep Temp",sdr_cache_path);
         temp_sdr_value = read_ipmi(command);
     }
     position = keyword_match(temp_sdr_value, Thermal_sensor_name[id - 1]);
@@ -795,12 +823,15 @@ int getThermalStatus_Ipmi(int id, int *tempc)
         ftemp = atof(ctemp);
         *tempc = ftemp * 1000;
     }
-    
+
     //Free malloc temp_sdr_value after use.
     if( id >= THERMAL_COUNT){
         free(temp_sdr_value);
         temp_sdr_value=NULL;
     }
+    //t = clock() - t;
+    //time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+    //DEBUG_PRINT("[time_debug] [%s][thermal %d] took %f seconds to execute \n",__FUNCTION__,id,time_taken);
 
     return 1;
 }
