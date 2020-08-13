@@ -71,4 +71,10 @@ class OnlPlatform_x86_64_cel_silverstone_r0(OnlPlatformCelestica,
         os.system("ipmitool fru > /tmp/onlp-fru-cache.tmp; sync; rm -f /tmp/onlp-fru-cache.txt; mv /tmp/onlp-fru-cache.tmp /tmp/onlp-fru-cache.txt")
         os.system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.tmp; sync; rm -f /tmp/onlp-sensor-list-cache.txt; mv /tmp/onlp-sensor-list-cache.tmp /tmp/onlp-sensor-list-cache.txt")
 
+        #Create softlink for python3
+        if not os.path.exists("/usr/bin/python3"):
+            os.system("ln -s /usr/bin/python3.4 /usr/bin/python3")
+        else:
+            pass
+
         return True
