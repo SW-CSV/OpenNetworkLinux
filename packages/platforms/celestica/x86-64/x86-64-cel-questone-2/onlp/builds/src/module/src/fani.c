@@ -1,112 +1,88 @@
 #include <onlp/platformi/fani.h>
-
-//#include "i2c_chips.h"
 #include "platform.h"
 
-
 onlp_fan_info_t f_info[FAN_COUNT + 1] = {
-    { },
+    {},
     {
-        { ONLP_FAN_ID_CREATE(1), "Chassis Fan 1", 0 },
-        0x0,
+        {ONLP_FAN_ID_CREATE(1), "Chassis Fan 1", 0},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
     },
     {
-        { ONLP_FAN_ID_CREATE(2), "Chassis Fan 2", 0 },
-        0x0,
+        {ONLP_FAN_ID_CREATE(2), "Chassis Fan 2", 0},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
     },
     {
-        { ONLP_FAN_ID_CREATE(3), "Chassis Fan 3", 0 },
-        0x0,
+        {ONLP_FAN_ID_CREATE(3), "Chassis Fan 3", 0},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
     },
     {
-        { ONLP_FAN_ID_CREATE(4), "Chassis Fan 4", 0 },
-        0x0,
+        {ONLP_FAN_ID_CREATE(4), "Chassis Fan 4", 0},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
     },
-    // {
-    //     { ONLP_FAN_ID_CREATE(5), "Chassis Fan 5", 0 },
-    //     0x0,
-    // }
+    {
+        {ONLP_FAN_ID_CREATE(8), "PSU Fan 1", ONLP_PSU_ID_CREATE(1)},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
+    },
+    {
+        {ONLP_FAN_ID_CREATE(9), "PSU Fan 2", ONLP_PSU_ID_CREATE(2)},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
+    },
 };
 
-
-int
-onlp_fani_init(void)
+int onlp_fani_init(void)
 {
-    //fanInit();
     return ONLP_STATUS_OK;
 }
 
-int
-onlp_fani_rpm_set(onlp_oid_t id, int rpm)
-{
-    int fan_id;
-    unsigned short p;
-
-    /* Max speed 13800 RPM. 1 % is 138 RPM */
-    p = (unsigned short) (rpm/138);
-    if ( p > 100)
-        p = 100;
-
-    fan_id = ONLP_OID_ID_GET(id) - 1;
-
-    fanSpeedSet(fan_id, p);
-    return ONLP_STATUS_OK;
-}
-
-int
-onlp_fani_percentage_set(onlp_oid_t id, int p)
-{
-    int fan_id;
-
-    fan_id = ONLP_OID_ID_GET(id) - 1;
-
-    fanSpeedSet(fan_id, (unsigned short)p);
-    return ONLP_STATUS_OK;
-}
-
-int
-onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t* info_p)
+int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
 {
     int fan_id;
 
     fan_id = ONLP_OID_ID_GET(id);
 
-    // if (fan_id > FAN_COUNT)
-    //     return ONLP_STATUS_E_INTERNAL;
-
     *info_p = f_info[fan_id];
 
-    if (!getFanPresent_tmp(fan_id))
-        info_p->status |= ONLP_FAN_STATUS_PRESENT;
-    else
-        return ONLP_STATUS_E_MISSING;
+    uint8_t spd_result;
+    int isfanb2f = 0;
 
+    if(fan_id <= FAN_COUNT - CHASSIS_FAN_COUNT){
+        get_fan_info(fan_id, info_p->model, info_p->serial,&isfanb2f);
+    }else{
+        int psu_id = 0;
+        if(fan_id == FAN_COUNT - 1){
+            psu_id = 1;
+        }else if(fan_id == FAN_COUNT){
+            psu_id = 2;
+        }
+        get_psu_model_sn(psu_id, info_p->model, info_p->serial);
+        isfanb2f = -1;
+    }
+    
 
+    spd_result = get_fan_speed(fan_id,&(info_p->percentage), &(info_p->rpm));
+    if(spd_result){
+        return ONLP_FAN_STATUS_FAILED;
+    }
 
-    if (getFanAirflow_tmp(fan_id))
-        info_p->status |= ONLP_FAN_STATUS_B2F;
-    else
+    info_p->status |= ONLP_FAN_STATUS_PRESENT;
+
+    switch (isfanb2f)
+    {
+    case ONLP_FAN_STATUS_F2B:
         info_p->status |= ONLP_FAN_STATUS_F2B;
-
-    getFaninfo(fan_id,info_p->model,info_p->serial);
-    //info_p->rpm = 9999;
-    getFanSpeed_PWM(fan_id, &(info_p->rpm));
-    getFanSpeed_Percentage(fan_id, &(info_p->percentage));
+        break;
+    case ONLP_FAN_STATUS_B2F:
+        info_p->status |= ONLP_FAN_STATUS_B2F;
+        break;
+    default:
+        break;
+    }
 
     return ONLP_STATUS_OK;
-
-    // if (fan_id > FAN_COUNT)
-    //     return ONLP_STATUS_E_INTERNAL;
-    
-    // *info = f_info[fan_id];
-
-    // if (!getFanPresent_tmp(fan_id))
-    // {
-    //     info->status |= ONLP_FAN_STATUS_PRESENT;
-    // }
-    // else
-    // {
-    //     return ONLP_STATUS_E_MISSING;
-    // }
-
 }

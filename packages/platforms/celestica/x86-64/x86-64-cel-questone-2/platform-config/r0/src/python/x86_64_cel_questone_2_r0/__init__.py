@@ -19,6 +19,10 @@ class OnlPlatform_x86_64_cel_questone_2_r0(OnlPlatformCelestica,
         self.insmod("optoe.ko")
         self.insmod("mc24lc64t.ko")
 
+        os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_devintf.ko")
+        os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_si.ko")
+        os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_ssif.ko")
+
         # ###### new configuration for SDK support ########
         os.system("insmod /lib/modules/`uname -r`/kernel/net/core/pktgen.ko")
         os.system("insmod /lib/modules/`uname -r`/kernel/net/core/drop_monitor.ko")

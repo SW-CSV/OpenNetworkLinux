@@ -20,53 +20,52 @@
  ************************************************************
  *
  *
- ***********************************************************/
+ ********************************************************** */
 #include <onlp/platformi/sfpi.h>
 #include <x86_64_cel_questone_2/x86_64_cel_questone_2_config.h>
 #include "x86_64_cel_questone_2_log.h"
 #include "platform.h"
-#include <inttypes.h>
 
 static int qsfp_count__ = 8;
-static int sfp_count__ = 48;
+static int sfp_count__ = 49;
+static int i2c_bus_offset = 14;
 static char node_path[PREFIX_PATH_LEN] = {0};
 char command[256];
 char buf[256];
 FILE *fp;
 
-
-
-static int 
-cel_questone_2_qsfp_sfp_node_read_int(char *path, int *value, int data_len)
+static int cel_questone_2_qsfp_sfp_node_read_int(char *path, int *value, int data_len)
 {
     int ret = 0;
-    char buf[8];    
+    char buf[8];
     *value = 0;
 
-    ret = deviceNodeReadString(path, buf, sizeof(buf), data_len);
+    ret = read_device_node_string(path, buf, sizeof(buf), data_len);
     if (ret == 0) {
-        //port present
-        //*value = atoi(buf);
         int is_not_present = atoi(buf);
-        if(!is_not_present){
+        if (!is_not_present)
+        {
             *value = !is_not_present;
         }
-        
     }
     return ret;
 }
 
-static char* 
-cel_questone_2_sfp_qsfp_get_port_path(int port, char *node_name)
+static char * cel_questone_2_sfp_qsfp_get_port_path(int port, char *node_name)
 {
-
-    if(port <= qsfp_count__ + sfp_count__){
-        if(port<=qsfp_count__){
-            sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port);
-        }else{
-            sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port-qsfp_count__);
+    if (port <= qsfp_count__ + sfp_count__)
+    {
+        if (port <= qsfp_count__)
+        {
+            sprintf(node_path, "%s/QSFP%d/qsfp_modprsL", PLATFORM_PATH, port);
         }
-    }else{
+        else
+        {
+            sprintf(node_path, "%s/SFP+%d/sfp_modabs", PLATFORM_PATH, port - qsfp_count__);
+        }
+    }
+    else
+    {
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
         return "";
     }
@@ -74,17 +73,21 @@ cel_questone_2_sfp_qsfp_get_port_path(int port, char *node_name)
     return node_path;
 }
 
-static char* 
-cel_questone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
+static char * cel_questone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
 {
-
-    if(port <= qsfp_count__ + sfp_count__){
-        if(port<=qsfp_count__){
-            sprintf(node_path, "%sSFF/QSFP%d/i2c/eeprom", PLATFORM_PATH, port);
-        }else{
-            sprintf(node_path, "%sSFF/SFP%d/i2c/eeprom", PLATFORM_PATH, port-qsfp_count__);
+    if (port <= qsfp_count__ + sfp_count__)
+    {
+        if (port <= qsfp_count__)
+        {
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + i2c_bus_offset);
         }
-    }else{
+        else
+        {
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port - qsfp_count__);
+        }
+    }
+    else
+    {
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
         return "";
     }
@@ -92,38 +95,37 @@ cel_questone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
     return node_path;
 }
 
-static uint64_t
-cel_questone_2_sfp_qsfp_get_all_ports_present(void)
+static uint64_t cel_questone_2_sfp_qsfp_get_all_ports_present(void)
 {
-	int i, ret;
-	uint64_t present = 0;
-    char* path;
+    int i, ret;
+    uint64_t present = 0;
+    char *path;
 
-	for(i = 0; i < (qsfp_count__+sfp_count__); i++) {
-		path = cel_questone_2_sfp_qsfp_get_port_path(i + 1, "present");
-	    if (cel_questone_2_qsfp_sfp_node_read_int(path, &ret, 0) != 0) {
-	        ret = 0;
-	    }
-		present |= ((uint64_t)ret << i);
-	}
+    for (i = 0; i < (qsfp_count__ + sfp_count__); i++)
+    {
+        path = cel_questone_2_sfp_qsfp_get_port_path(i + 1, "present");
+        if (cel_questone_2_qsfp_sfp_node_read_int(path, &ret, 0) != 0)
+        {
+            ret = 0;
+        }
+        present |= ((uint64_t)ret << i);
+    }
 
     return present;
 }
 
-int
-onlp_sfpi_init(void)
+int onlp_sfpi_init(void)
 {
     return ONLP_STATUS_OK;
 }
 
-int
-onlp_sfpi_bitmap_get(onlp_sfp_bitmap_t* bmap)
+int onlp_sfpi_bitmap_get(onlp_sfp_bitmap_t *bmap)
 {
-
     int p;
     AIM_BITMAP_CLR_ALL(bmap);
-    
-    for(p = 0; p < (qsfp_count__+sfp_count__); p++) {
+
+    for (p = 0; p < (qsfp_count__ + sfp_count__); p++)
+    {
         AIM_BITMAP_SET(bmap, p);
     }
 
@@ -135,34 +137,36 @@ onlp_sfpi_bitmap_get(onlp_sfp_bitmap_t* bmap)
 * Return 0 if not present.
 * Return < 0 if error.
 */
-int
-onlp_sfpi_is_present(int port)
+int onlp_sfpi_is_present(int port)
 {
     int present;
-    char* path = cel_questone_2_sfp_qsfp_get_port_path(port + 1, "present");
-    if (cel_questone_2_qsfp_sfp_node_read_int(path, &present, 0) != 0) {
-        if(port <= qsfp_count__){
+    char *path = cel_questone_2_sfp_qsfp_get_port_path(port + 1, "present");
+    if (cel_questone_2_qsfp_sfp_node_read_int(path, &present, 0) != 0)
+    {
+        if (port <= qsfp_count__)
+        {
             AIM_LOG_ERROR("Unable to read present status from qsfp port(%d)\r\n", port);
-        }else{
-            AIM_LOG_ERROR("Unable to read present status from sfp port(%d)\r\n", port-qsfp_count__);
         }
-        
+        else
+        {
+            AIM_LOG_ERROR("Unable to read present status from sfp port(%d)\r\n", port - qsfp_count__);
+        }
+
         return ONLP_STATUS_E_INTERNAL;
     }
     return present;
 }
 
-int
-onlp_sfpi_presence_bitmap_get(onlp_sfp_bitmap_t* dst)
+int onlp_sfpi_presence_bitmap_get(onlp_sfp_bitmap_t *dst)
 {
-    //AIM_BITMAP_CLR_ALL(dst);
     int i = 0;
     uint64_t presence_all = 0;
 
-	presence_all = cel_questone_2_sfp_qsfp_get_all_ports_present();
-    //printf("presence_all = %d\n",presence_all);
+    presence_all = cel_questone_2_sfp_qsfp_get_all_ports_present();
+
     /* Populate bitmap */
-    for(i = 0; presence_all; i++) {
+    for (i = 0; presence_all; i++)
+    {
         AIM_BITMAP_MOD(dst, i, (presence_all & 1));
         presence_all >>= 1;
     }
@@ -173,14 +177,12 @@ onlp_sfpi_presence_bitmap_get(onlp_sfp_bitmap_t* dst)
  * This function reads the SFPs idrom and returns in
  * in the data buffer provided.
  */
-int
-onlp_sfpi_eeprom_read(int port, uint8_t data[256])
+int onlp_sfpi_eeprom_read(int port, uint8_t data[256])
 {
+    char *path;
 
-    char* path;
+    path = cel_questone_2_sfp_qsfp_get_eeprom_path(port + 1, "eeprom");
 
-	//sprintf(sub_path, "/%d-0050/eeprom", CHASSIS_SFP_I2C_BUS_BASE + port);
-	path= cel_questone_2_sfp_qsfp_get_eeprom_path(port + 1, "eeprom");
     /*
      * Read the SFP eeprom into data[]
      *
@@ -188,17 +190,15 @@ onlp_sfpi_eeprom_read(int port, uint8_t data[256])
      * Return OK if eeprom is read
      */
     memset(data, 0, 256);
-    
-    if (deviceNodeReadBinary(path, (char*)data, 256, 256) != 0) {
+    if (read_device_node_binary(path, (char*)data, 256, 256) != 0) {
         AIM_LOG_ERROR("Unable to read eeprom from port(%d)\r\n", port);
         return ONLP_STATUS_E_INTERNAL;
     }
-    
+
     return ONLP_STATUS_OK;
 }
 
-int
-onlp_sfpi_rx_los_bitmap_get(onlp_sfp_bitmap_t* dst)
+int onlp_sfpi_rx_los_bitmap_get(onlp_sfp_bitmap_t *dst)
 {
     return ONLP_STATUS_OK;
 }
@@ -206,8 +206,7 @@ onlp_sfpi_rx_los_bitmap_get(onlp_sfp_bitmap_t* dst)
 /*
  * De-initialize the SFPI subsystem.
  */
-int
-onlp_sfpi_denit(void)
+int onlp_sfpi_denit(void)
 {
     return ONLP_STATUS_OK;
 }
