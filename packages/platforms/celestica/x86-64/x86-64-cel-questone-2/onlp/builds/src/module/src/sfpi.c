@@ -27,8 +27,9 @@
 #include "platform.h"
 
 static int qsfp_count__ = 8;
-static int sfp_count__ = 49;
-static int i2c_bus_offset = 14;
+static int sfp_count__ = 48;
+static int qsfp_bus_offset = 49;
+static int sfp_bus_offset = 1;
 static char node_path[PREFIX_PATH_LEN] = {0};
 char command[256];
 char buf[256];
@@ -57,11 +58,11 @@ static char * cel_questone_2_sfp_qsfp_get_port_path(int port, char *node_name)
     {
         if (port <= qsfp_count__)
         {
-            sprintf(node_path, "%s/QSFP%d/qsfp_modprsL", PLATFORM_PATH, port);
+            sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port);
         }
         else
         {
-            sprintf(node_path, "%s/SFP+%d/sfp_modabs", PLATFORM_PATH, port - qsfp_count__);
+            sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port - qsfp_count__);
         }
     }
     else
@@ -69,7 +70,6 @@ static char * cel_questone_2_sfp_qsfp_get_port_path(int port, char *node_name)
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
         return "";
     }
-
     return node_path;
 }
 
@@ -79,11 +79,11 @@ static char * cel_questone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
     {
         if (port <= qsfp_count__)
         {
-            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + i2c_bus_offset);
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + qsfp_bus_offset);
         }
         else
         {
-            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port - qsfp_count__);
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port - qsfp_count__ + sfp_bus_offset);
         }
     }
     else
@@ -91,7 +91,7 @@ static char * cel_questone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
         return "";
     }
-
+    printf("%s\n",node_path);
     return node_path;
 }
 

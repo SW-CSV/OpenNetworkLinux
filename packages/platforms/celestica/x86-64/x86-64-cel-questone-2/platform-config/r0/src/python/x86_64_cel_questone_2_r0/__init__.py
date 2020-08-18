@@ -10,7 +10,7 @@ class OnlPlatform_x86_64_cel_questone_2_r0(OnlPlatformCelestica,
     def baseconfig(self):
         onlp_interval_time = 30  # second
         file_path = "/var/opt/interval_time.txt"
-        qsfp_quantity = 6
+        qsfp_quantity = 8
         sfp_quantity = 48
         sfp_i2c_start_bus = 2
         print("Initialize and Install the driver here")
