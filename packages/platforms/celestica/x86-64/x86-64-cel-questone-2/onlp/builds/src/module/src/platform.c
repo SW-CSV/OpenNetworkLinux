@@ -766,9 +766,9 @@ int get_fan_speed(int id,int *per, int *rpm)
 	int ret = 0;
     char strTmp[2][128] = {{0}, {0}};
     char *token = NULL;
-    char *Fan_sensor_name[9] = {
+    char *Fan_sensor_name[6] = {
         "Fan1_Rear", "Fan2_Rear", "Fan3_Rear", "Fan4_Rear",
-        "Fan5_Rear", "Fan6_Rear", "Fan7_Rear","PSUL_Fan","PSUR_Fan"};
+        "PSUL_Fan","PSUR_Fan"};
 
 	if((NULL == per) || (NULL == rpm))
 	{
@@ -802,11 +802,10 @@ int get_fan_speed(int id,int *per, int *rpm)
         sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
         tmp = read_tmp_cache(command,ONLP_SENSOR_LIST_FILE);
     }
-    
     char *content, *temp_pointer;
     int flag = 0;
     content = strtok_r(tmp, "\n", &temp_pointer);
-    while(content != NULL){
+    while(content != NULL){;
         if (strstr(content, Fan_sensor_name[id - 1])) {
             flag = 1;
             index++;
