@@ -477,15 +477,15 @@ int get_psu_model_sn(int id, char *model, char *serial_number)
         String example:			  
         root@localhost:~# ipmitool fru (Pull out PSUL)
 
-        FRU Device Description : FRU_PSUL (ID 3)
+        FRU Device Description : FRU_PSUL (ID 4)
          Device not present (Unknown (0x81))
 
         FRU Device Description : FRU_PSUR (ID 4)
-         Board Mfg Date        : Mon Mar 11 08:55:00 2019
-         Board Mfg             : DELTA-THAILAND  
-         Board Product         : 1500W-CAPELLA-PSU 1500W 
-         Board Serial          : FFGT1911000697
-         Board Part Number     : TDPS1500AB6B
+        Product Manufacturer  : DELTA
+        Product Name          : DPS-550AB-21 B
+        Product Part Number   : XXXXXXXXXXXXXXXXXXXX
+        Product Version       : S0F
+        Product Serial        : IRJD1733001328
 
         */
         content = strtok_r(tmp, "\n", &temp_pointer);
@@ -500,17 +500,17 @@ int get_psu_model_sn(int id, char *model, char *serial_number)
                     index++;
                     flag=0;
                 }
-                else if (strstr(content, "Board Serial")) {
-                    token = strtok(content, ":");
-                    token = strtok(NULL, ":");
-                    char* trim_token = trim(token);
-                    sprintf(psu_information[index].serial_number,"%s",trim_token);
-                }
-                else if (strstr(content, "Board Part Number")) {
+                else if (strstr(content, "Product Part Number")) {
                     token = strtok(content, ":");
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
                     sprintf(psu_information[index].model,"%s",trim_token);
+                }
+                else if (strstr(content, "Product Serial")) {
+                    token = strtok(content, ":");
+                    token = strtok(NULL, ":");
+                    char* trim_token = trim(token);
+                    sprintf(psu_information[index].serial_number,"%s",trim_token);
                     flag = 0;
                     search_psu_id++;
                 }
@@ -566,31 +566,19 @@ int get_fan_info(int id, char *model, char *serial, int *isfanb2f)
         String example:			  
         root@localhost:~# ipmitool fru (Pull out FAN1)
 
-        FRU Device Description : FRU_FAN1 (ID 6)
+        FRU Device Description : FRU_FAN1 (ID 5)
          Device not present (Unknown (0x81))
 
-        FRU Device Description : FRU_FAN2 (ID 7)
-         Board Mfg Date        : Sat Apr  6 10:26:00 2019
-         Board Mfg             : Celestica
-         Board Product         : Fan Board 2
-         Board Serial          : R1141-F0018-01GD0119170163
-         Board Part Number     : R1141-F0018-01
-         Board Extra           : Mt.Echo-Fan
-         Board Extra           : 02
-         Board Extra           : F2B
+        FRU Device Description : FRU_FAN2 (ID 6)
+        Board Mfg Date        : Wed Jun  5 03:19:00 2019
+        Board Mfg             : Celestica
+        Board Serial          : F302-R1156F002801-19210027
+        Board Part Number     : R1156-F0028-01
+        Board Extra           : Questone2A-Fan
+        Board Extra           : R02
+        Board Extra           : B2F
+        Board Extra           : F302D
 
-        .
-        .
-
-        FRU Device Description : FRU_FAN7 (ID 12)
-         Board Mfg Date        : Sat Apr  6 10:26:00 2019
-         Board Mfg             : Celestica
-         Board Product         : Fan Board 7
-         Board Serial          : R1141-F0018-01GD0119170165
-         Board Part Number     : R1141-F0018-01
-         Board Extra           : Mt.Echo-Fan
-         Board Extra           : 02
-         Board Extra           : F2B
 
         */
         char *content, *temp_pointer;
@@ -824,7 +812,6 @@ int get_fan_speed(int id,int *per, int *rpm)
             index++;
         }
         if(flag == 1){
-
             i = 0;
             token = strtok(content, "|");
             while( token != NULL ) 
