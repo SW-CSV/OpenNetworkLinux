@@ -91,7 +91,6 @@ static char * cel_questone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
         return "";
     }
-    printf("%s\n",node_path);
     return node_path;
 }
 
