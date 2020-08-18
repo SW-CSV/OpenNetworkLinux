@@ -43,8 +43,12 @@ static const struct led_reg_mapper led_mapper[LED_COUNT + 1] = {
     {},
     {"LED_SYSTEM", LED_SYSTEM_H, LED_SYSTEM_REGISTER},
     {"LED_ALARM", LED_ALARM_H, ALARM_REGISTER},
-    {"LED_PSU", LED_PSU_H, PSU_LED_REGISTER},
-    {"LED_FAN",LED_FAN_H,LED_FAN_REGISTER}
+    {"LED_PSU1", LED_PSU1_H, PSU_LED_REGISTER},
+    {"LED_PSU2", LED_PSU2_H, PSU_LED_REGISTER},
+    {"LED_FAN1",LED_FAN1_H,LED_FAN1_REGISTER},
+    {"LED_FAN2", LED_FAN2_H,LED_FAN2_REGISTER},
+    {"LED_FAN4", LED_FAN4_H,LED_FAN4_REGISTER},
+    {"LED_FAN5", LED_FAN5_H,LED_FAN5_REGISTER}
 };
 
 static const struct psu_reg_bit_mapper psu_mapper [PSU_COUNT + 1] = {
