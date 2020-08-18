@@ -7,6 +7,7 @@
 //FAN
 #define FAN_COUNT   6
 #define CHASSIS_FAN_COUNT 4
+#define PSU_FAN_COUNT 2
 
 //PSU
 #define PSU_COUNT 2

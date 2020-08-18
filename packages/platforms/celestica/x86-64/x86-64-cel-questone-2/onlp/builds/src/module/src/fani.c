@@ -51,7 +51,7 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
     uint8_t spd_result;
     int isfanb2f = 0;
 
-    if(fan_id <= FAN_COUNT - CHASSIS_FAN_COUNT){
+    if(fan_id <= FAN_COUNT - PSU_FAN_COUNT){
         get_fan_info(fan_id, info_p->model, info_p->serial,&isfanb2f);
     }else{
         int psu_id = 0;
