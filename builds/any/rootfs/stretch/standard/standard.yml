@@ -70,9 +70,9 @@ Configure:
 
   update-rc.d:
     - 'faultd defaults'
-    - 'onlpd defaults'
-    - 'snmpd defaults'
-    - 'onlp-snmpd defaults'
+    - 'onlpd remove'
+    - 'snmpd remove'
+    - 'onlp-snmpd remove'
     - 'ssh defaults'
     - 'openbsd-inetd remove'
     - 'ntp remove'
