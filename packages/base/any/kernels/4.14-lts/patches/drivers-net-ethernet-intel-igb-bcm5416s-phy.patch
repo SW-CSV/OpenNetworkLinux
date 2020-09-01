@@ -1,0 +1,141 @@
+diff --git a/drivers/net/ethernet/intel/igb/e1000_82575.c b/drivers/net/ethernet/intel/igb/e1000_82575.c
+index c37cc8b..40ccb11 100644
+--- a/drivers/net/ethernet/intel/igb/e1000_82575.c
++++ b/drivers/net/ethernet/intel/igb/e1000_82575.c
+@@ -342,8 +342,10 @@ static s32 igb_init_phy_params_82575(struct e1000_hw *hw)
+ 		break;
+ 	case BCM54616_E_PHY_ID:
+ 		phy->type = e1000_phy_bcm54616;
++		printk("phy id is 54616\n");
+ 		break;
+ 	default:
++		printk("default phy err\n");
+ 		ret_val = -E1000_ERR_PHY;
+ 		goto out;
+ 	}
+@@ -634,6 +636,7 @@ static s32 igb_get_invariants_82575(struct e1000_hw *hw)
+ 		mac->type = e1000_i210;
+ 		break;
+ 	case E1000_DEV_ID_I211_COPPER:
++	case E1000_DEV_ID_I211_COPPER_FLASHLESS:
+ 		mac->type = e1000_i211;
+ 		break;
+ 	case E1000_DEV_ID_I354_BACKPLANE_1GBPS:
+diff --git a/drivers/net/ethernet/intel/igb/e1000_hw.h b/drivers/net/ethernet/intel/igb/e1000_hw.h
+index 6c9485a..08f4961 100644
+--- a/drivers/net/ethernet/intel/igb/e1000_hw.h
++++ b/drivers/net/ethernet/intel/igb/e1000_hw.h
+@@ -62,6 +62,7 @@ struct e1000_hw;
+ #define E1000_DEV_ID_I210_FIBER			0x1536
+ #define E1000_DEV_ID_I210_SERDES		0x1537
+ #define E1000_DEV_ID_I210_SGMII			0x1538
++#define E1000_DEV_ID_I211_COPPER_FLASHLESS	0x1532
+ #define E1000_DEV_ID_I210_COPPER_FLASHLESS	0x157B
+ #define E1000_DEV_ID_I210_SERDES_FLASHLESS	0x157C
+ #define E1000_DEV_ID_I211_COPPER		0x1539
+diff --git a/drivers/net/ethernet/intel/igb/igb_main.c b/drivers/net/ethernet/intel/igb/igb_main.c
+index 8892ea5..b1c633f 100644
+--- a/drivers/net/ethernet/intel/igb/igb_main.c
++++ b/drivers/net/ethernet/intel/igb/igb_main.c
+@@ -82,6 +82,7 @@ static const struct pci_device_id igb_pci_tbl[] = {
+ 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I210_FIBER), board_82575 },
+ 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I210_SERDES), board_82575 },
+ 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I210_SGMII), board_82575 },
++{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I211_COPPER_FLASHLESS), board_82575 },
+ 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I210_COPPER_FLASHLESS), board_82575 },
+ 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I210_SERDES_FLASHLESS), board_82575 },
+ 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I350_COPPER), board_82575 },
+@@ -2191,6 +2192,7 @@ void igb_set_fw_version(struct igb_adapter *adapter)
+ 	switch (hw->mac.type) {
+ 	case e1000_i210:
+ 	case e1000_i211:
++		
+ 		if (!(igb_get_flash_presence_i210(hw))) {
+ 			snprintf(adapter->fw_version,
+ 				 sizeof(adapter->fw_version),
+@@ -2334,13 +2336,16 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 			pci_name(pdev), pdev->vendor, pdev->device);
+ 		return -EINVAL;
+ 	}
+-
++	
+ 	err = pci_enable_device_mem(pdev);
++	
+ 	if (err)
+ 		return err;
+ 
+ 	pci_using_dac = 0;
++	
+ 	err = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(64));
++
+ 	if (!err) {
+ 		pci_using_dac = 1;
+ 	} else {
+@@ -2351,8 +2356,9 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 			goto err_dma;
+ 		}
+ 	}
+-
++	
+ 	err = pci_request_mem_regions(pdev, igb_driver_name);
++	
+ 	if (err)
+ 		goto err_pci_reg;
+ 
+@@ -2362,8 +2368,10 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 	pci_save_state(pdev);
+ 
+ 	err = -ENOMEM;
++	
+ 	netdev = alloc_etherdev_mq(sizeof(struct igb_adapter),
+ 				   IGB_MAX_TX_QUEUES);
++	
+ 	if (!netdev)
+ 		goto err_alloc_etherdev;
+ 
+@@ -2378,7 +2386,9 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 	adapter->msg_enable = netif_msg_init(debug, DEFAULT_MSG_ENABLE);
+ 
+ 	err = -EIO;
++	
+ 	adapter->io_addr = pci_iomap(pdev, 0, 0);
++	
+ 	if (!adapter->io_addr)
+ 		goto err_ioremap;
+ 	/* hw->hw_addr can be altered, we'll use adapter->io_addr for unmap */
+@@ -2520,7 +2530,7 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 	}
+ 
+ 	memcpy(netdev->dev_addr, hw->mac.addr, netdev->addr_len);
+-
++	//netdev->dev_addr="AA:BB:CC:DD:EE:FF";
+ 	if (!is_valid_ether_addr(netdev->dev_addr)) {
+ 		dev_err(&pdev->dev, "Invalid MAC Address\n");
+ 		err = -EIO;
+@@ -2764,9 +2774,11 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 	return 0;
+ 
+ err_register:
++	printk("err register\n");
+ 	igb_release_hw_control(adapter);
+ 	memset(&adapter->i2c_adap, 0, sizeof(adapter->i2c_adap));
+ err_eeprom:
++	printk("err eeprom\n");
+ 	if (!igb_check_reset_block(hw))
+ 		igb_reset_phy(hw);
+ 
+@@ -7950,11 +7962,9 @@ static int __igb_shutdown(struct pci_dev *pdev, bool *enable_wake,
+ 	rtnl_unlock();
+ 
+ #ifdef CONFIG_PM
+-	if (!runtime) {
+-		retval = pci_save_state(pdev);
+-		if (retval)
+-			return retval;
+-	}
++	retval = pci_save_state(pdev);
++	if (retval)
++		return retval;
+ #endif
+ 
+ 	status = rd32(E1000_STATUS);
