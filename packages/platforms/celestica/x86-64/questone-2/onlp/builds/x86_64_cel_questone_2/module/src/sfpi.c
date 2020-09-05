@@ -28,7 +28,6 @@
 
 static int qsfp_count__ = 8;
 static int sfp_count__ = 48;
-static int qsfp_bus_offset = 49;
 static int sfp_bus_offset = 1;
 static char node_path[PREFIX_PATH_LEN] = {0};
 char command[256];
@@ -56,13 +55,13 @@ static char * cel_questone_2_sfp_qsfp_get_port_path(int port, char *node_name)
 {
     if (port <= qsfp_count__ + sfp_count__)
     {
-        if (port <= qsfp_count__)
+        if (port > sfp_count__)
         {
-            sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port);
+            sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port - sfp_count__);
         }
         else
         {
-            sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port - qsfp_count__);
+            sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port);
         }
     }
     else
@@ -77,14 +76,7 @@ static char * cel_questone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
 {
     if (port <= qsfp_count__ + sfp_count__)
     {
-        if (port <= qsfp_count__)
-        {
-            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + qsfp_bus_offset);
-        }
-        else
-        {
-            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port - qsfp_count__ + sfp_bus_offset);
-        }
+        sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + sfp_bus_offset);
     }
     else
     {
