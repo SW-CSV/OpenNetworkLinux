@@ -49,15 +49,15 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
     present_status = (psu_status >> psu_mapper[psu_id].bit_present) & 0x01;
     pow_status = (psu_status >> psu_mapper[psu_id].bit_pow_sta) & 0x01;
 
-    if (!present_status)
+    if (present_status == 0)
     {
         info_p->status |= ONLP_PSU_STATUS_PRESENT;
-        if (!pow_status)
-            info_p->status = ONLP_PSU_STATUS_FAILED;
+        if (pow_status == 0)
+            info_p->status |= ONLP_PSU_STATUS_UNPLUGGED;
     }
     else
     {
-        info_p->status |= ONLP_PSU_STATUS_UNPLUGGED;
+        info_p->status = ONLP_PSU_STATUS_FAILED;
     }
 
     get_psu_model_sn(psu_id,info_p->model,info_p->serial);
