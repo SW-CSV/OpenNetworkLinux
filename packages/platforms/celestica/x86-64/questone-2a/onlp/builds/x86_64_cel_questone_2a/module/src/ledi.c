@@ -25,24 +25,24 @@ static onlp_led_info_t led_info[] =
 {
     { },
     {
-        { ONLP_LED_ID_CREATE(LED_SYSTEM), "System LED (Front)", 0 },
+        { ONLP_LED_ID_CREATE(LED_SYSTEM), "System LED", 0 },
         ONLP_LED_STATUS_PRESENT,
         ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_YELLOW_BLINKING | ONLP_LED_CAPS_GREEN | 
         ONLP_LED_CAPS_GREEN_BLINKING | ONLP_LED_CAPS_AUTO,
     },
     {
-        { ONLP_LED_ID_CREATE(LED_ALARM), "Alert LED (Front)", 0 },
+        { ONLP_LED_ID_CREATE(LED_ALARM), "Alert LED", 0 },
         ONLP_LED_STATUS_PRESENT,
         ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_YELLOW_BLINKING | ONLP_LED_CAPS_GREEN | 
         ONLP_LED_CAPS_GREEN_BLINKING,
     },
     {
-        { ONLP_LED_ID_CREATE(LED_PSU1), "PSU-1 LED (Front)", 0 },
+        { ONLP_LED_ID_CREATE(LED_PSU1), "PSU-1 LED", 0 },
         ONLP_LED_STATUS_PRESENT,
         ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_GREEN,
     },
     {
-        { ONLP_LED_ID_CREATE(LED_PSU2), "PSU-2 LED (Front)", 0 },
+        { ONLP_LED_ID_CREATE(LED_PSU2), "PSU-2 LED", 0 },
         ONLP_LED_STATUS_PRESENT,
         ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_GREEN,
     },
@@ -79,6 +79,7 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
 {
     int led_id;
     uint8_t led_color = 0;
+    uint8_t alert_status,present_status =0;
     uint8_t blink_status = 0;
     uint8_t result = 0;
 
@@ -136,19 +137,31 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
             }
             break;
         case LED_PSU1:
-            led_color = result & 0x1;
-            if(led_color == 1){
-                info_p->mode |= ONLP_LED_CAPS_YELLOW;
+            alert_status = (result >> 7) & 0x1;
+            present_status = (result >> 5) & 0x1;
+
+            if(present_status == 0){
+                if(alert_status == 1){
+                    info_p->mode |= ONLP_LED_MODE_GREEN;
+                }else{
+                    info_p->mode |= ONLP_LED_MODE_YELLOW;
+                }
             }else{
-                info_p->mode |= ONLP_LED_MODE_AUTO;
+                info_p->mode |= ONLP_LED_MODE_YELLOW;
             }
             break;
         case LED_PSU2:
-            led_color = (result >>1) & 0x1;
-            if(led_color == 1){
-                info_p->mode |= ONLP_LED_CAPS_YELLOW;
+            alert_status = (result >> 6) & 0x1;
+            present_status = (result >> 4) & 0x1;
+
+            if(present_status == 0){
+                if(alert_status == 1){
+                    info_p->mode |= ONLP_LED_MODE_GREEN;
+                }else{
+                    info_p->mode |= ONLP_LED_MODE_YELLOW;
+                }
             }else{
-                info_p->mode |= ONLP_LED_MODE_AUTO;
+                info_p->mode |= ONLP_LED_MODE_YELLOW;
             }
             break;
     }
