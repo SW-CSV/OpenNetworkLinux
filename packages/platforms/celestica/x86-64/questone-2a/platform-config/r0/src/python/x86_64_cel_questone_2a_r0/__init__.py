@@ -2,7 +2,7 @@ from onl.platform.base import *
 from onl.platform.celestica import *
 
 class OnlPlatform_x86_64_cel_questone_2a_r0(OnlPlatformCelestica,
-                                            OnlPlatformPortConfig_48x10_8x100):
+                                            OnlPlatformPortConfig_48x25_8x100):
     PLATFORM='x86-64-cel-questone-2a-r0'
     MODEL="Questone-2A"
     SYS_OBJECT_ID=".2060.1"
