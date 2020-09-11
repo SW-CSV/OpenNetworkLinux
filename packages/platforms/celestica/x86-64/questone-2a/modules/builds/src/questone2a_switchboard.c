@@ -58,10 +58,16 @@ static int  majorNumber;
 #define CLASS_NAME "seastone2_fpga"
 #define DRIVER_NAME "seastone2"
 #define FPGA_PCI_NAME "Seastone2_fpga_pci"
-#else
+#endif
+#ifdef QUESTONE2
 #define CLASS_NAME "questone2_fpga"
 #define DRIVER_NAME "questone2"
 #define FPGA_PCI_NAME "questone2_fpga_pci"
+#endif
+#ifdef QUESTONE2A
+#define CLASS_NAME "questone2a_fpga"
+#define DRIVER_NAME "questone2a"
+#define FPGA_PCI_NAME "questone2a_fpga_pci"
 #endif
 #define DEVICE_NAME "fwupgrade"
 
