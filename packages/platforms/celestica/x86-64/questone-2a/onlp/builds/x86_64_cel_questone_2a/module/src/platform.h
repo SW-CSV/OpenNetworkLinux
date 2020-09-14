@@ -122,7 +122,7 @@ typedef struct psuInfo_p
 }psuInfo_p;
 
 #define SYS_CPLD_PATH "/sys/devices/platform/sys_cpld/"
-#define PLATFORM_PATH "/sys/devices/platform/questone2/"
+#define PLATFORM_PATH "/sys/devices/platform/questone2a/"
 #define I2C_DEVICE_PATH "/sys/bus/i2c/devices/"
 #define PREFIX_PATH_ON_SYS_EEPROM "/sys/bus/i2c/devices/i2c-1/1-0056/eeprom"
 
