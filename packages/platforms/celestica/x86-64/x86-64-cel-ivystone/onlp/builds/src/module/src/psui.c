@@ -69,7 +69,7 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
         //     if(!absent_status)
         //         info_p->status |= ONLP_PSU_STATUS_PRESENT;
         // }
-        absent_status = (psu_stat >> (psu_id - 1)) &0x1;
+        absent_status = (psu_stat >> (PSU_COUNT - psu_id)) &0x1;
         if (!absent_status)
             info_p->status |= ONLP_PSU_STATUS_PRESENT;
     }
@@ -80,20 +80,28 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
     
     switch(psu_id)
     {
-	case PSU1_ID: 
-	    (void)strncpy(psu_name, PSU1_SENSOR_MAPPING_NAME, strlen(PSU1_SENSOR_MAPPING_NAME));
-	    break;
-    case PSU2_ID:
-	    (void)strncpy(psu_name, PSU2_SENSOR_MAPPING_NAME, strlen(PSU2_SENSOR_MAPPING_NAME));
-	    break;
-	case PSU3_ID:
-	    (void)strncpy(psu_name, PSU3_SENSOR_MAPPING_NAME, strlen(PSU3_SENSOR_MAPPING_NAME));
-	    break;
-	case PSU4_ID:
-	    (void)strncpy(psu_name, PSU4_SENSOR_MAPPING_NAME, strlen(PSU4_SENSOR_MAPPING_NAME));
-	    break;
+        case PSU1_ID: 
+        {
+            (void)strncpy(psu_name, PSU1_SENSOR_MAPPING_NAME, strlen(PSU1_SENSOR_MAPPING_NAME));
+            break;
+        }
+        case PSU2_ID:
+        {
+            (void)strncpy(psu_name, PSU2_SENSOR_MAPPING_NAME, strlen(PSU2_SENSOR_MAPPING_NAME));
+            break;
+        }
+        case PSU3_ID:
+        {
+            (void)strncpy(psu_name, PSU3_SENSOR_MAPPING_NAME, strlen(PSU3_SENSOR_MAPPING_NAME));
+            break;
+        }
+        case PSU4_ID:
+        {
+            (void)strncpy(psu_name, PSU4_SENSOR_MAPPING_NAME, strlen(PSU4_SENSOR_MAPPING_NAME));
+            break;
+        }
         default:
-	    return ONLP_STATUS_E_MISSING;
+            return ONLP_STATUS_E_MISSING;
     }
 
     memset(cont_buf, 0, 64);
