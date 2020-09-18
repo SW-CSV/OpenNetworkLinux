@@ -88,19 +88,19 @@ static onlp_led_info_t led_info[] =
         {
             {ONLP_LED_ID_CREATE(LED_SYSTEM), "Chassis System LED", 0},
             ONLP_LED_STATUS_PRESENT,
-            ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_GREEN, 
+            ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_YELLOW_BLINKING | ONLP_LED_CAPS_GREEN, 
         },
 
         {
-            {ONLP_LED_ID_CREATE(LED_PSU), "Chassis Power LED", 0},
+            {ONLP_LED_ID_CREATE(LED_PSU), "Chassis PSU LED", 0},
             ONLP_LED_STATUS_PRESENT,
-            ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_GREEN, 
+            ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_GREEN, 
         },
 
 	{
             {ONLP_LED_ID_CREATE(LED_FAN), "Chassis Fan LED", 0},
             ONLP_LED_STATUS_PRESENT,
-            ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_GREEN, 
+            ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_AUTO |ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_GREEN, 
         }
 };
 #endif
@@ -114,7 +114,7 @@ int onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t *info_p)
 {
     int led_id;
     uint8_t led_color = 0;
-    //uint8_t blink_status = 0;
+    uint8_t blink_status = 0;
     //uint8_t result[LED_COUNT];
     uint8_t result = 0;
     
@@ -156,12 +156,12 @@ int onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t *info_p)
             break;
         }
 
-        /*blink_status = result & 0x3;
+        blink_status = result & 0x3;
         if (blink_status == 1 || blink_status == 2)
         {
             int current_mode = info_p->mode;
             info_p->mode = current_mode + 1;
-        }*/
+        }
 
         break;
 
@@ -193,32 +193,30 @@ int onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t *info_p)
 */
     case LED_PSU:
         result = get_led_status(led_id);
-
         if (result != 0xFF)
             info_p->status |= ONLP_LED_STATUS_ON;
         led_color = result & 0x3;
-        if (led_color == LED_GREEN_ENUM)
+        if (led_color == LED_YELLOW_ENUM - 1)
         {
-            info_p->mode = ONLP_LED_MODE_GREEN;
+            info_p->mode = ONLP_LED_MODE_YELLOW;
         }
         else
         {
-            info_p->mode = ONLP_LED_MODE_YELLOW;
+            info_p->mode = ONLP_LED_MODE_AUTO;
         }
         break;
     case LED_FAN:
-         result = get_led_status(led_id);
-
+        result = get_led_status(led_id);
         if (result != 0xFF)
             info_p->status |= ONLP_LED_STATUS_ON;
         led_color = result & 0x3;
-        if (led_color == LED_GREEN_ENUM)
+        if (led_color == LED_YELLOW_ENUM - 1)
         {
-            info_p->mode = ONLP_LED_MODE_GREEN;
+            info_p->mode = ONLP_LED_MODE_YELLOW;
         }
         else
         {
-            info_p->mode = ONLP_LED_MODE_YELLOW;
+            info_p->mode = ONLP_LED_MODE_AUTO;
         }
         break;
     default: 

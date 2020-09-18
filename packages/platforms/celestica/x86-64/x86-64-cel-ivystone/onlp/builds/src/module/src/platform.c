@@ -1246,8 +1246,7 @@ uint8_t get_led_color(const char *path, uint8_t *color)
 uint8_t get_led_status(int id)
 {
     uint8_t ret = 0xFF;
-    uint8_t color = 0;
-
+    //uint8_t color = 0;
     if (id > LED_COUNT || id < 0)
         return 0xFF;
 
@@ -1256,25 +1255,8 @@ uint8_t get_led_status(int id)
         uint8_t result = 0;
         uint16_t led_stat_reg;
         
-        switch(id){
-	    case 1:
-		led_stat_reg = led_mapper[id].dev_reg;
-	        result = read_register(led_stat_reg);
-		break;
-	    case 2:
-		result = get_led_color(ONLP_PSU_LED_CACHE_FILE, &color);
-                if(!result){
-                    result = color;
-                }
-		break;
-	    case 3:
-	 	result = get_led_color(ONLP_FAN_LED_CACHE_FILE, &color);
-                if(!result){
-		    result = color;
-		}	
-		break;
-        }
-
+        led_stat_reg = led_mapper[id].dev_reg;
+	    result = read_register(led_stat_reg);
         ret = result;
     }
 
