@@ -59,16 +59,12 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 
     if (psu_stat != 0xFF)
     {
-
-        // if(psu_id == PSUL_ID){
-        //     absent_status = (psu_stat >> 5) &0x1;
-        //     if(!absent_status)
-        //         info_p->status |= ONLP_PSU_STATUS_PRESENT;
-        // }else{
-        //     absent_status = (psu_stat >> 4) &0x1;
-        //     if(!absent_status)
-        //         info_p->status |= ONLP_PSU_STATUS_PRESENT;
-        // }
+        /*Bit   PSUNUM (1 = absent , 0 = present)
+           3    1
+           2    2
+           1    3
+           0    4
+        */
         absent_status = (psu_stat >> (PSU_COUNT - psu_id)) &0x1;
         if (!absent_status)
             info_p->status |= ONLP_PSU_STATUS_PRESENT;
