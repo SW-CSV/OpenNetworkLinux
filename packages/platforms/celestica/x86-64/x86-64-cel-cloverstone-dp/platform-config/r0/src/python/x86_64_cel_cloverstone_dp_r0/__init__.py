@@ -14,15 +14,15 @@ class OnlPlatform_x86_64_cel_cloverstone_dp_r0(OnlPlatformCelestica,
 #        sfp_quantity = 48
 #        sfp_i2c_start_bus = 2
         print("Initialize and Install the driver here")
-        self.insmod("i2c-ocores.ko")
-        self.insmod("cls-switchboard.ko")
-        self.insmod("switchboard-diag.ko")
-        self.insmod("i2c-cls.ko")
-        self.insmod("optoe.ko")
-        self.insmod("mc24lc64t.ko")
+#        self.insmod("i2c-ocores.ko")
+#        self.insmod("cls-switchboard.ko")
+#        self.insmod("switchboard-diag.ko")
+#        self.insmod("i2c-cls.ko")
+#        self.insmod("optoe.ko")
+#        self.insmod("mc24lc64t.ko")
 
         #self.insmod("baseboard.ko")
-        self.insmod("cpld_b.ko")
+#        self.insmod("cpld_b.ko")
         #self.insmod("xcvr-cls.koo")
 
         os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_devintf.ko")
@@ -35,7 +35,7 @@ class OnlPlatform_x86_64_cel_cloverstone_dp_r0(OnlPlatformCelestica,
         os.system("insmod /lib/modules/`uname -r`/kernel/net/ipv4/tcp_probe.ko")
 
         # eeprom driver
-        self.new_i2c_device('24lc64t', 0x56, 1)
+#        self.new_i2c_device('24lc64t', 0x56, 1)
         # initialize SFP devices name
 #        for actual_i2c_port in range(sfp_i2c_start_bus, sfp_i2c_start_bus+(qsfp_quantity+sfp_quantity)):
 #            port_number = actual_i2c_port - (sfp_i2c_start_bus-1)
