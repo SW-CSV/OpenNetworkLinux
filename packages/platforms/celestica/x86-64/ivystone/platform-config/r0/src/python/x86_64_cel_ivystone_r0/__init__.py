@@ -32,7 +32,7 @@ class OnlPlatform_x86_64_cel_ivystone_r0(OnlPlatformCelestica,
                 for module in modules:
                     os.system("echo 'blacklist {0}' >> {1}".format(module[0:-3],blacklist_file_path))
 
-        os.system("insmod /lib/modules/`uname -r`/kernel/drivers/i2c/busses/i2c-ocores.ko")
+        #os.system("insmod /lib/modules/`uname -r`/kernel/drivers/i2c/busses/i2c-ocores.ko")
         self.insmod("dimm-bus.ko")
         #self.insmod("i2c-imc.ko")
         os.system("insmod /lib/modules/`uname -r`/onl/celestica/x86-64-cel-ivystone/i2c-imc.ko allow_unsafe_access=1")
