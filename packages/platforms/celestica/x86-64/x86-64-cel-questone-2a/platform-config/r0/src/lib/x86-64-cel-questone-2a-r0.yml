@@ -1,0 +1,29 @@
+---
+
+######################################################################
+#
+# platform-config for Celestica Questone
+#
+#
+######################################################################
+
+x86-64-cel-questone-2a-r0:
+
+  grub:
+
+    device: /sys/devices/pci0000:00/0000:00:14.0/ata5/host4/target4:0:0/4:0:0:0
+    
+    kernel:
+      <<: *kernel-4-9
+
+    args: >-
+      nopat
+      console=ttyS0,115200n8
+      earlycon=uart8250,mmio,0xdf27b000
+      intel_iommu=off
+
+  ##network
+  ##  interfaces:
+  ##    ma1:
+  ##      name: ~
+  ##      syspath: pci0000:00/0000:00:14.0
