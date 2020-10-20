@@ -17,3 +17,4 @@
 - onl-kernel-5.4-lts-x86-64-all-modules
 - efibootmgr
 - gdisk
+- curl
