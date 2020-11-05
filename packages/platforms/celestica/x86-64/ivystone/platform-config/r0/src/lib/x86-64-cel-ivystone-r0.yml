@@ -12,7 +12,7 @@ x86-64-cel-ivystone-r0:
 
     serial: >-
       --port=0x3f8
-      --speed=9600
+      --speed=115200
       --word=8
       --parity=no
       --stop=1
@@ -22,7 +22,7 @@ x86-64-cel-ivystone-r0:
 
     args: >-
       nopat
-      console=ttyS0,9600n8
+      console=ttyS0,115200n8
 
   ##network:
   ##  interfaces:
