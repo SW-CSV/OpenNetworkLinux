@@ -43,7 +43,7 @@ ISDIAG_PLATFORM=0
 #Create Array
 DIAG_PLATFORM0='x86_64-cel_silverstone-r0'
 DIAG_PLATFORM1='x86_64-dellemc_z9332f_d1508-r0'
-DIAG_PLATFORM2='x86_64-cel_silverstone_2-r0'
+DIAG_PLATFORM2='x86_64-cel_silverstone2-r0'
 
 #Onie-sysinfo is read from /etc/machine.conf (onie_platform attribute)
 CURRENT_PLATFORM=$(onie-sysinfo)
@@ -196,7 +196,7 @@ echo "Create dummy partition for CLS Diag OS for prevent being destroy by onie-u
 #     exit 0
 # fi
 START_POS=$(sgdisk -f /dev/sda)
-END_POS=$((($START_POS+2048)*2))
+END_POS=$(($START_POS+4096))
 LAST_PARTITION_NUMBER=$(sgdisk -p /dev/sda | grep $(($START_POS-1)) | awk '{print $1}')
 NEW_PARTITION_NUMBER=$((LAST_PARTITION_NUMBER+1))
 sgdisk -n $NEW_PARTITION_NUMBER:$START_POS:$END_POS -t $NEW_PARTITION_NUMBER:0700 /dev/sda
