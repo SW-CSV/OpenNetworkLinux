@@ -1,5 +1,5 @@
 /*
- * switchboard.c - driver for Silverstone Switch board FPGA/CPLD.
+ * switchboard.c - driver for cloverstone_dp Switch board FPGA/CPLD.
  *
  * Author: Pradchaya Phucharoen
  *
@@ -94,6 +94,28 @@ I2C_CH13        0x00000D00 - 0x00000D10.
 SPI Master      0x00001200 - 0x00001300.
 DPLL SPI Master 0x00001320 - 0x0000132F.
 PORT XCVR       0x00004000 - 0x00004FFF.
+
+
+
+cloverstone-dp Line Card FPGA Register map 
+Misc Control	0x00000000 – 0x000007FC.
+I2C_CH1	        0x00000800 - 0x0000081C
+I2C_CH2	        0x00000820 - 0x0000083C.
+I2C_CH3	        0x00000840 - 0x0000085C.
+I2C_CH4	        0x00000860 - 0x0000087C.
+I2C_CH5	        0x00000880 - 0x0000089C.
+I2C_CH6	        0x000008A0 - 0x000008BC.
+I2C_CH7	        0x000008C0 - 0x000008DC.
+I2C_CH8	        0x000008E0 - 0x000008FC.
+I2C_CH9	        0x00000900 - 0x0000091C.
+I2C_CH10	    0x00000920 - 0x0000093C.
+I2C_CH11	    0x00000940 - 0x0000095C.
+I2C_CH12	    0x00000960 - 0x0000097C.
+I2C_CH13	    0x00000980 - 0x0000099C.
+I2C_CH14	    0x000009A0 - 0x000009BC.
+SPI Master	    0x00000A00 - 0x00000BFC.
+PORT XCVR	    0x00004000 - 0x00004FFF.
+
 */
 
 /* MISC       */
@@ -375,7 +397,7 @@ static struct fpga_device fpga_dev = {
     .data_mmio_len = 0,
 };
 
-struct silverstone_fpga_data {
+struct cloverstone_dp_fpga_data {
     struct device *sff_devices[SFF_PORT_TOTAL];
     struct i2c_client *sff_i2c_clients[SFF_PORT_TOTAL];
     struct i2c_adapter *i2c_adapter[VIRTUAL_I2C_PORT_LENGTH];
@@ -390,7 +412,7 @@ struct sff_device_data {
     enum PORT_TYPE port_type;
 };
 
-struct silverstone_fpga_data *fpga_data;
+struct cloverstone_dp_fpga_data *fpga_data;
 
 /*
  * Kernel object for other module drivers.
@@ -1092,7 +1114,7 @@ static struct attribute_group sff_led_test_grp = {
     .attrs = sff_led_test,
 };
 
-static struct device * silverstone_sff_init(int portid) {
+static struct device * cloverstone_dp_sff_init(int portid) {
     struct sff_device_data *new_data;
     struct device *new_device;
 
@@ -1524,7 +1546,7 @@ static u32 fpga_i2c_func(struct i2c_adapter *a)
            I2C_FUNC_SMBUS_BLOCK_DATA;
 }
 
-static const struct i2c_algorithm silverstone_i2c_algorithm = {
+static const struct i2c_algorithm cloverstone_dp_i2c_algorithm = {
     .smbus_xfer = fpga_i2c_access,
     .functionality  = fpga_i2c_func,
 };
@@ -1539,7 +1561,7 @@ static const struct i2c_algorithm silverstone_i2c_algorithm = {
  * When bus_number_offset is -1, created adapter with dynamic bus number.
  * Otherwise create adapter at i2c bus = bus_number_offset + portid.
  */
-static struct i2c_adapter * silverstone_i2c_init(struct platform_device *pdev, int portid, int bus_number_offset)
+static struct i2c_adapter * cloverstone_dp_i2c_init(struct platform_device *pdev, int portid, int bus_number_offset)
 {
     int error;
 
@@ -1555,7 +1577,7 @@ static struct i2c_adapter * silverstone_i2c_init(struct platform_device *pdev, i
 
     new_adapter->owner = THIS_MODULE;
     new_adapter->class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
-    new_adapter->algo  = &silverstone_i2c_algorithm;
+    new_adapter->algo  = &cloverstone_dp_i2c_algorithm;
     /* If the bus offset is -1, use dynamic bus number */
     if (bus_number_offset == -1) {
         new_adapter->nr = -1;
@@ -1594,7 +1616,7 @@ static struct i2c_adapter * silverstone_i2c_init(struct platform_device *pdev, i
 };
 
 // I/O resource need.
-static struct resource silverstone_resources[] = {
+static struct resource cloverstone_dp_resources[] = {
     {
         .start  = 0x10000000,
         .end    = 0x10001000,
@@ -1602,18 +1624,18 @@ static struct resource silverstone_resources[] = {
     },
 };
 
-static void silverstone_dev_release( struct device * dev)
+static void cloverstone_dp_dev_release( struct device * dev)
 {
     return;
 }
 
-static struct platform_device silverstone_dev = {
+static struct platform_device cloverstone_dp_dev = {
     .name           = DRIVER_NAME,
     .id             = -1,
-    .num_resources  = ARRAY_SIZE(silverstone_resources),
-    .resource       = silverstone_resources,
+    .num_resources  = ARRAY_SIZE(cloverstone_dp_resources),
+    .resource       = cloverstone_dp_resources,
     .dev = {
-        .release = silverstone_dev_release,
+        .release = cloverstone_dp_dev_release,
     }
 };
 
@@ -1627,7 +1649,7 @@ static struct i2c_board_info sff8436_eeprom_info[] = {
     { I2C_BOARD_INFO("optoe2", 0x50) }, //For SFP+ w/ sff8472
 };
 
-static int silverstone_drv_probe(struct platform_device *pdev)
+static int cloverstone_dp_drv_probe(struct platform_device *pdev)
 {
     struct resource *res;
     int ret = 0;
@@ -1639,7 +1661,7 @@ static int silverstone_drv_probe(struct platform_device *pdev)
     /* The device class need to be instantiated before this function called */
     BUG_ON(fpgafwclass == NULL);
 
-    fpga_data = devm_kzalloc(&pdev->dev, sizeof(struct silverstone_fpga_data),
+    fpga_data = devm_kzalloc(&pdev->dev, sizeof(struct cloverstone_dp_fpga_data),
                              GFP_KERNEL);
 
     if (!fpga_data)
@@ -1756,14 +1778,14 @@ static int silverstone_drv_probe(struct platform_device *pdev)
     }
 
     for (portid_count = 0 ; portid_count < VIRTUAL_I2C_PORT_LENGTH ; portid_count++) {
-        fpga_data->i2c_adapter[portid_count] = silverstone_i2c_init(pdev, portid_count, VIRTUAL_I2C_BUS_OFFSET);
+        fpga_data->i2c_adapter[portid_count] = cloverstone_dp_i2c_init(pdev, portid_count, VIRTUAL_I2C_BUS_OFFSET);
     }
 
     /* Init SFF devices */
     for (portid_count = 0; portid_count < SFF_PORT_TOTAL; portid_count++) {
         struct i2c_adapter *i2c_adap = fpga_data->i2c_adapter[portid_count];
         if (i2c_adap) {
-            fpga_data->sff_devices[portid_count] = silverstone_sff_init(portid_count);
+            fpga_data->sff_devices[portid_count] = cloverstone_dp_sff_init(portid_count);
             sff_data = dev_get_drvdata(fpga_data->sff_devices[portid_count]);
             BUG_ON(sff_data == NULL);
             if ( sff_data->port_type == QSFP ) {
@@ -1815,7 +1837,7 @@ static int silverstone_drv_probe(struct platform_device *pdev)
     return 0;
 }
 
-static int silverstone_drv_remove(struct platform_device *pdev)
+static int cloverstone_dp_drv_remove(struct platform_device *pdev)
 {
     int portid_count;
     struct sff_device_data *rem_data;
@@ -1936,9 +1958,9 @@ static struct pci_driver pci_dev_ops = {
 };
 
 
-static struct platform_driver silverstone_drv = {
-    .probe  = silverstone_drv_probe,
-    .remove = __exit_p(silverstone_drv_remove),
+static struct platform_driver cloverstone_dp_drv = {
+    .probe  = cloverstone_dp_drv_probe,
+    .remove = __exit_p(cloverstone_dp_drv_remove),
     .driver = {
         .name   = DRIVER_NAME,
     },
@@ -2063,7 +2085,7 @@ static void fpgafw_exit(void) {
     printk(KERN_INFO "Goodbye!\n");
 }
 
-int silverstone_init(void)
+int cloverstone_dp_init(void)
 {
     int rc;
     rc = pci_register_driver(&pci_dev_ops);
@@ -2073,20 +2095,20 @@ int silverstone_init(void)
         printk(KERN_ALERT "FPGA PCIe device not found!\n");
         return -ENODEV;
     }
-    platform_device_register(&silverstone_dev);
-    platform_driver_register(&silverstone_drv);
+    platform_device_register(&cloverstone_dp_dev);
+    platform_driver_register(&cloverstone_dp_drv);
     return 0;
 }
 
-void silverstone_exit(void)
+void cloverstone_dp_exit(void)
 {
-    platform_driver_unregister(&silverstone_drv);
-    platform_device_unregister(&silverstone_dev);
+    platform_driver_unregister(&cloverstone_dp_drv);
+    platform_device_unregister(&cloverstone_dp_dev);
     pci_unregister_driver(&pci_dev_ops);
 }
 
-module_init(silverstone_init);
-module_exit(silverstone_exit);
+module_init(cloverstone_dp_init);
+module_exit(cloverstone_dp_exit);
 
 MODULE_AUTHOR("Celestica Inc.");
 MODULE_DESCRIPTION("DELLEMC Z9332F D1508 platform driver");

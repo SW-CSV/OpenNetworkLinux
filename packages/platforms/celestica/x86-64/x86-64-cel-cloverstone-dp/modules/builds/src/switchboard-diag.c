@@ -1,5 +1,5 @@
 /*
- * switchboard-diag.c - driver for Silverstone Switch board FPGA/CPLD diag.
+ * switchboard-diag.c - driver for Cloverstone_dp Switch board FPGA/CPLD diag.
  *
  * Author: Pradchaya Phucharoen
  *
@@ -19,14 +19,26 @@
  *   \--sys
  *       \--devices
  *            \--platform
- *                \--silverstone
+ *                \--linecard0
  *                    |--FPGA
  *                    |--CPLD1
  *                    |--CPLD2
  *                    \--SFF
- *                        |--QSFP[1..32]
- *                        \--SFP[1..2]
- *
+ *                        |--QSFP[1..40]
+ *                        |--port_led_color
+ *                        |--port_led_mode
+ *                \--linecard1
+ *                    |--FPGA
+ *                    |--CPLD1
+ *                    |--CPLD2
+ *                    \--SFF
+ *                        |--QSFP[1..40]
+ *                        |--port_led_color
+ *                        |--port_led_mode
+ *                \cls-xcvr0
+ *                    |--QSFP[1..40]
+ *                \cls-xcvr1
+ *                    |--QSFP[1..40]
  */
 
 #include <linux/interrupt.h>
@@ -52,23 +64,34 @@
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
 
-#define MOD_VERSION "2.0.0"
-#define FPGA_PCI_DEVICE_ID      0x7021
+#define MOD_VERSION "2.0.1"
+#define FPGA_PCI_DEVICE_ID      0x7011
 #define FPGA_PCI_BAR_NUM        0
-#define SWITCH_CPLD_ADAP_NUM    4
+#define SWITCH_LC1_CPLD1_ADAP_NUM   6
+#define SWITCH_LC1_CPLD2_ADAP_NUM   7
+#define SWITCH_LC2_CPLD1_ADAP_NUM   13
+#define SWITCH_LC2_CPLD2_ADAP_NUM   14
 
-#define CLASS_NAME "silverstone_fpga"
-#define DRIVER_NAME "z9332f_d1508"
-#define FPGA_PCI_NAME "Silverstone_fpga_pci"
+#define CPLD_SCRATCH_REG        3
+
+#define CLASS_NAME "ccdp_fpga"
+//#define DRIVER_NAME "z9332f_d1508"
+#define DRIVER_NAME "ccdp_lc_fpga"
+#define DRIVER_NAME1 "linecard0"
+#define DRIVER_NAME2 "linecard1"
+
+#define FPGA_PCI_NAME "cloverstone_dp_fpga_pci"
 #define DEVICE_NAME "fwupgrade"
 
-static int fpga_pci_probe(struct pci_dev *pdev);
-static void fpga_pci_remove(void);
+//static int fpga_pci_probe(struct pci_dev *pdev);
+//static void fpga_pci_remove(void);
+
+static int fpga_init_index=0;  // to suit for 2 line cards
 
 
 /*
 ========================================
-FPGA PCIe BAR 0 Registers
+OLD FPGA PCIe BAR 0 Registers
 ========================================
 Misc Control    0x00000000 - 0x000000FF.
 I2C_CH1         0x00000100 - 0x00000110
@@ -87,6 +110,27 @@ I2C_CH13        0x00000D00 - 0x00000D10.
 SPI Master      0x00001200 - 0x00001300.
 DPLL SPI Master 0x00001320 - 0x0000132F.
 PORT XCVR       0x00004000 - 0x00004FFF.
+
+cloverstone-dp Line Card FPGA Register map 
+Misc Control	0x00000000 – 0x000007FC.
+I2C_CH1	        0x00000800 - 0x0000081C
+I2C_CH2	        0x00000820 - 0x0000083C.
+I2C_CH3	        0x00000840 - 0x0000085C.
+I2C_CH4	        0x00000860 - 0x0000087C.
+I2C_CH5	        0x00000880 - 0x0000089C.
+I2C_CH6	        0x000008A0 - 0x000008BC.
+I2C_CH7	        0x000008C0 - 0x000008DC.
+I2C_CH8	        0x000008E0 - 0x000008FC.
+I2C_CH9	        0x00000900 - 0x0000091C.
+I2C_CH10	    0x00000920 - 0x0000093C.
+I2C_CH11	    0x00000940 - 0x0000095C.
+I2C_CH12	    0x00000960 - 0x0000097C.
+I2C_CH13	    0x00000980 - 0x0000099C.
+I2C_CH14	    0x000009A0 - 0x000009BC.
+SPI Master	    0x00000A00 - 0x00000BFC.
+PORT XCVR	    0x00004000 - 0x00004FFF.
+
+
 */
 
 /* MISC       */
@@ -99,6 +143,16 @@ PORT XCVR       0x00004000 - 0x00004FFF.
 #define I2C_MASTER_CH_1             1
 #define I2C_MASTER_CH_2             2
 #define I2C_MASTER_CH_3             3
+#define I2C_MASTER_CH_4             4
+#define I2C_MASTER_CH_5             5
+#define I2C_MASTER_CH_6             6
+#define I2C_MASTER_CH_7             7
+#define I2C_MASTER_CH_8             8
+#define I2C_MASTER_CH_9             9
+#define I2C_MASTER_CH_10            10
+#define I2C_MASTER_CH_11            11
+#define I2C_MASTER_CH_12            12
+#define I2C_MASTER_CH_13            13
 
 /* FPGA FRONT PANEL PORT MGMT */
 #define SFF_PORT_CTRL_BASE          0x4000
@@ -181,14 +235,14 @@ PORT XCVR       0x00004000 - 0x00004FFF.
  *
  */
 
-#define VIRTUAL_I2C_QSFP_PORT   32
-#define VIRTUAL_I2C_SFP_PORT    2
+#define VIRTUAL_I2C_QSFP_PORT   40
+#define VIRTUAL_I2C_SFP_PORT    0
 #define CPLD1_SLAVE_ADDR        0x30
 #define CPLD2_SLAVE_ADDR        0x31
 #define NUM_I2C_CLIENT          2
 #define SFF_PORT_TOTAL    VIRTUAL_I2C_QSFP_PORT + VIRTUAL_I2C_SFP_PORT
 
-static struct class*  fpgafwclass  = NULL; // < The device-driver class struct pointer
+//static struct class*  fpgafwclass  = NULL; // < The device-driver class struct pointer
 
 enum PORT_TYPE {
     NONE,
@@ -212,29 +266,35 @@ struct i2c_dev_data {
 /* PREDEFINED I2C SWITCH DEVICE TOPOLOGY */
 static struct i2c_switch fpga_i2c_bus_dev[] = {
     /* BUS3 QSFP Exported as virtual bus */
-    {I2C_MASTER_CH_3, 0x71, 2, QSFP, "QSFP1"}, {I2C_MASTER_CH_3, 0x71, 3, QSFP, "QSFP2"},
-    {I2C_MASTER_CH_3, 0x71, 0, QSFP, "QSFP3"}, {I2C_MASTER_CH_3, 0x71, 1, QSFP, "QSFP4"},
-    {I2C_MASTER_CH_3, 0x71, 6, QSFP, "QSFP5"}, {I2C_MASTER_CH_3, 0x71, 5, QSFP, "QSFP6"},
-    {I2C_MASTER_CH_3, 0x73, 7, QSFP, "QSFP7"}, {I2C_MASTER_CH_3, 0x71, 4, QSFP, "QSFP8"},
+    {I2C_MASTER_CH_1, 0x71, 0, QSFP, "QSFP1"}, {I2C_MASTER_CH_1, 0x71, 1, QSFP, "QSFP2"},
+    {I2C_MASTER_CH_1, 0x71, 2, QSFP, "QSFP3"}, {I2C_MASTER_CH_1, 0x71, 3, QSFP, "QSFP4"},
+    {I2C_MASTER_CH_1, 0x71, 4, QSFP, "QSFP5"}, {I2C_MASTER_CH_1, 0x71, 5, QSFP, "QSFP6"},
+    {I2C_MASTER_CH_1, 0x71, 6, QSFP, "QSFP7"}, {I2C_MASTER_CH_1, 0x71, 7, QSFP, "QSFP8"},
 
-    {I2C_MASTER_CH_3, 0x73, 4, QSFP, "QSFP9"},  {I2C_MASTER_CH_3, 0x73, 3, QSFP, "QSFP10"},
-    {I2C_MASTER_CH_3, 0x73, 6, QSFP, "QSFP11"}, {I2C_MASTER_CH_3, 0x73, 2, QSFP, "QSFP12"},
-    {I2C_MASTER_CH_3, 0x73, 1, QSFP, "QSFP13"}, {I2C_MASTER_CH_3, 0x73, 5, QSFP, "QSFP14"},
-    {I2C_MASTER_CH_3, 0x71, 7, QSFP, "QSFP15"}, {I2C_MASTER_CH_3, 0x73, 0, QSFP, "QSFP16"},
+    {I2C_MASTER_CH_2, 0x72, 0, QSFP, "QSFP9"},  {I2C_MASTER_CH_2, 0x72, 1, QSFP, "QSFP10"},
+    {I2C_MASTER_CH_2, 0x72, 2, QSFP, "QSFP11"}, {I2C_MASTER_CH_2, 0x72, 3, QSFP, "QSFP12"},
+    {I2C_MASTER_CH_2, 0x72, 4, QSFP, "QSFP13"}, {I2C_MASTER_CH_2, 0x72, 5, QSFP, "QSFP14"},
+    {I2C_MASTER_CH_2, 0x72, 6, QSFP, "QSFP15"}, {I2C_MASTER_CH_2, 0x72, 7, QSFP, "QSFP16"},
 
-    {I2C_MASTER_CH_3, 0x72, 1, QSFP, "QSFP17"}, {I2C_MASTER_CH_3, 0x72, 7, QSFP, "QSFP18"},
-    {I2C_MASTER_CH_3, 0x72, 4, QSFP, "QSFP19"}, {I2C_MASTER_CH_3, 0x72, 0, QSFP, "QSFP20"},
-    {I2C_MASTER_CH_3, 0x72, 5, QSFP, "QSFP21"}, {I2C_MASTER_CH_3, 0x72, 2, QSFP, "QSFP22"},
-    {I2C_MASTER_CH_3, 0x70, 5, QSFP, "QSFP23"}, {I2C_MASTER_CH_3, 0x72, 6, QSFP, "QSFP24"},
+    {I2C_MASTER_CH_3, 0x75, 0, QSFP, "QSFP17"}, {I2C_MASTER_CH_3, 0x75, 1, QSFP, "QSFP18"},
+    {I2C_MASTER_CH_3, 0x75, 2, QSFP, "QSFP19"}, {I2C_MASTER_CH_3, 0x75, 3, QSFP, "QSFP20"},
+    {I2C_MASTER_CH_3, 0x75, 4, QSFP, "QSFP21"}, {I2C_MASTER_CH_3, 0x75, 5, QSFP, "QSFP22"},
+    {I2C_MASTER_CH_3, 0x75, 6, QSFP, "QSFP23"}, {I2C_MASTER_CH_3, 0x75, 7, QSFP, "QSFP24"},
 
-    {I2C_MASTER_CH_3, 0x72, 3, QSFP, "QSFP25"}, {I2C_MASTER_CH_3, 0x70, 6, QSFP, "QSFP26"},
-    {I2C_MASTER_CH_3, 0x70, 0, QSFP, "QSFP27"}, {I2C_MASTER_CH_3, 0x70, 7, QSFP, "QSFP28"},
-    {I2C_MASTER_CH_3, 0x70, 2, QSFP, "QSFP29"}, {I2C_MASTER_CH_3, 0x70, 4, QSFP, "QSFP30"},
-    {I2C_MASTER_CH_3, 0x70, 3, QSFP, "QSFP31"}, {I2C_MASTER_CH_3, 0x70, 1, QSFP, "QSFP32"},
-    /* BUS1 SFP+ Exported as virtual bus */
-    {I2C_MASTER_CH_1, 0xFF, 0, SFP, "SFP1"},
-    /* BUS2 SFP+ Exported as virtual bus */
-    {I2C_MASTER_CH_2, 0xFF, 0, SFP, "SFP2"},
+    {I2C_MASTER_CH_4, 0x74, 4, QSFP, "QSFP25"}, {I2C_MASTER_CH_4, 0x74, 5, QSFP, "QSFP26"},
+    {I2C_MASTER_CH_4, 0x74, 6, QSFP, "QSFP27"}, {I2C_MASTER_CH_4, 0x74, 7, QSFP, "QSFP28"},
+    {I2C_MASTER_CH_4, 0x74, 0, QSFP, "QSFP29"}, {I2C_MASTER_CH_4, 0x74, 1, QSFP, "QSFP30"},
+    {I2C_MASTER_CH_4, 0x74, 2, QSFP, "QSFP31"}, {I2C_MASTER_CH_4, 0x74, 3, QSFP, "QSFP32"},
+
+    {I2C_MASTER_CH_5, 0x73, 4, QSFP, "QSFP33"}, {I2C_MASTER_CH_5, 0x73, 5, QSFP, "QSFP34"},
+    {I2C_MASTER_CH_5, 0x73, 6, QSFP, "QSFP35"}, {I2C_MASTER_CH_5, 0x73, 7, QSFP, "QSFP36"},
+    {I2C_MASTER_CH_5, 0x73, 0, QSFP, "QSFP37"}, {I2C_MASTER_CH_5, 0x73, 1, QSFP, "QSFP38"},
+    {I2C_MASTER_CH_5, 0x73, 2, QSFP, "QSFP39"}, {I2C_MASTER_CH_5, 0x73, 3, QSFP, "QSFP40"},
+
+    /* CPLD 1 */
+    {I2C_MASTER_CH_6, 0xFF, 0, NONE, "CPLD1"},
+    /* CPLD 2 */
+    {I2C_MASTER_CH_7, 0xFF, 0, NONE, "CPLD2"},
 };
 
 struct fpga_device {
@@ -243,42 +303,51 @@ struct fpga_device {
     resource_size_t data_mmio_start;
     resource_size_t data_mmio_len;
 };
+struct fpga_device *fpga_dev;
 
-static struct fpga_device fpga_dev = {
-    .data_base_addr = 0,
-    .data_mmio_start = 0,
-    .data_mmio_len = 0,
-};
-
-struct silverstone_fpga_data {
+struct cloverstone_dp_fpga_data {
     struct device *sff_devices[SFF_PORT_TOTAL];
+	struct i2c_adapter *cpld_i2c_adapters[NUM_I2C_CLIENT];
     struct i2c_client *cpld_i2c_clients[NUM_I2C_CLIENT];
     struct mutex fpga_lock;         // For FPGA internal lock
     void __iomem * fpga_read_addr;
     uint8_t cpld1_read_addr;
     uint8_t cpld2_read_addr;
+	struct class*  fpgafwclass; // < The device-driver class struct pointer
+	char fpgafwclass_name[10];
 };
 
 struct sff_device_data {
     int portid;
     enum PORT_TYPE port_type;
+	struct cloverstone_dp_fpga_data *fpga_data;
+	struct fpga_device *fpga_dev;
 };
 
-struct silverstone_fpga_data *fpga_data;
+struct cloverstone_dp_fpga_data *fpga_data;
 
 /*
  * Kernel object for other module drivers.
  * Other module can use these kobject as a parent.
  */
-
-static struct kobject *fpga = NULL;
-static struct kobject *cpld1 = NULL;
-static struct kobject *cpld2 = NULL;
-
-/**
+struct line_card {
+	struct kobject *fpga;
+	struct kobject *cpld1;
+	struct kobject *cpld2;
+	/**
  * Device node in sysfs tree.
  */
-static struct device *sff_dev = NULL;
+	struct device *sff_dev;
+};
+
+struct line_card *linecard;
+
+struct drv_data{
+	struct cloverstone_dp_fpga_data *fpga_data;
+	struct line_card *linecard;
+	struct fpga_device *fpga_dev;	
+};
+
 
 /**
  * Show the value of the register set by 'set_fpga_reg_address'
@@ -292,7 +361,13 @@ static ssize_t get_fpga_reg_value(struct device *dev, struct device_attribute *d
 {
     // read data from the address
     uint32_t data;
-    data = ioread32(fpga_data->fpga_read_addr);
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
+	
+    data = ioread32(driver_data->fpga_data->fpga_read_addr);
     return sprintf(buf, "0x%8.8x\n", data);
 }
 /**
@@ -305,12 +380,17 @@ static ssize_t set_fpga_reg_address(struct device *dev, struct device_attribute 
 {
     uint32_t addr;
     char *last;
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
 
     addr = (uint32_t)strtoul(buf, &last, 16);
     if (addr == 0 && buf == last) {
         return -EINVAL;
     }
-    fpga_data->fpga_read_addr = fpga_dev.data_base_addr + addr;
+    driver_data->fpga_data->fpga_read_addr = driver_data->fpga_dev->data_base_addr + addr;
     return count;
 }
 /**
@@ -321,7 +401,13 @@ static ssize_t set_fpga_reg_address(struct device *dev, struct device_attribute 
 static ssize_t get_fpga_scratch(struct device *dev, struct device_attribute *devattr,
                                 char *buf)
 {
-    return sprintf(buf, "0x%8.8x\n", ioread32(fpga_dev.data_base_addr + FPGA_SCRATCH) & 0xffffffff);
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
+	
+    return sprintf(buf, "0x%8.8x\n", ioread32(driver_data->fpga_dev->data_base_addr + FPGA_SCRATCH) & 0xffffffff);
 }
 /**
  * Store value of fpga scratch register
@@ -333,11 +419,17 @@ static ssize_t set_fpga_scratch(struct device *dev, struct device_attribute *dev
 {
     uint32_t data;
     char *last;
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
+	
     data = (uint32_t)strtoul(buf, &last, 16);
     if (data == 0 && buf == last) {
         return -EINVAL;
     }
-    iowrite32(data, fpga_dev.data_base_addr + FPGA_SCRATCH);
+    iowrite32(data, driver_data->fpga_dev->data_base_addr + FPGA_SCRATCH);
     return count;
 }
 /**
@@ -356,28 +448,33 @@ static ssize_t set_fpga_reg_value(struct device *dev, struct device_attribute *d
     char clone[count];
     char *pclone = clone;
     char *last;
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
 
+	
     strcpy(clone, buf);
 
-    mutex_lock(&fpga_data->fpga_lock);
+    mutex_lock(&driver_data->fpga_data->fpga_lock);
     tok = strsep((char**)&pclone, " ");
     if (tok == NULL) {
-        mutex_unlock(&fpga_data->fpga_lock);
+        mutex_unlock(&driver_data->fpga_data->fpga_lock);
         return -EINVAL;
     }
     addr = (uint32_t)strtoul(tok, &last, 16);
     if (addr == 0 && tok == last) {
-        mutex_unlock(&fpga_data->fpga_lock);
+        mutex_unlock(&driver_data->fpga_data->fpga_lock);
         return -EINVAL;
     }
     tok = strsep((char**)&pclone, " ");
     if (tok == NULL) {
-        mutex_unlock(&fpga_data->fpga_lock);
+        mutex_unlock(&driver_data->fpga_data->fpga_lock);
         return -EINVAL;
     }
     value = (uint32_t)strtoul(tok, &last, 16);
     if (value == 0 && tok == last) {
-        mutex_unlock(&fpga_data->fpga_lock);
+        mutex_unlock(&driver_data->fpga_data->fpga_lock);
         return -EINVAL;
     }
     tok = strsep((char**)&pclone, " ");
@@ -386,19 +483,19 @@ static ssize_t set_fpga_reg_value(struct device *dev, struct device_attribute *d
     } else {
         mode = (uint32_t)strtoul(tok, &last, 10);
         if (mode == 0 && tok == last) {
-            mutex_unlock(&fpga_data->fpga_lock);
+            mutex_unlock(&driver_data->fpga_data->fpga_lock);
             return -EINVAL;
         }
     }
     if (mode == 32) {
-        iowrite32(value, fpga_dev.data_base_addr + addr);
+        iowrite32(value, driver_data->fpga_dev->data_base_addr + addr);
     } else if (mode == 8) {
-        iowrite8(value, fpga_dev.data_base_addr + addr);
+        iowrite8(value, driver_data->fpga_dev->data_base_addr + addr);
     } else {
-        mutex_unlock(&fpga_data->fpga_lock);
+        mutex_unlock(&driver_data->fpga_data->fpga_lock);
         return -EINVAL;
     }
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_unlock(&driver_data->fpga_data->fpga_lock);
     return count;
 }
 
@@ -414,17 +511,21 @@ static ssize_t dump_read(struct file *filp, struct kobject *kobj,
     unsigned long i = 0;
     ssize_t status;
     u8 read_reg;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
 
     if ( off + count > PORT_XCVR_REGISTER_SIZE ) {
         return -EINVAL;
     }
-    mutex_lock(&fpga_data->fpga_lock);
+    mutex_lock(&driver_data->fpga_data->fpga_lock);
     while (i < count) {
-        read_reg = ioread8(fpga_dev.data_base_addr + SFF_PORT_CTRL_BASE + off + i);
+        read_reg = ioread8(driver_data->fpga_dev->data_base_addr + SFF_PORT_CTRL_BASE + off + i);
         buf[i++] = read_reg;
     }
     status = count;
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_unlock(&driver_data->fpga_data->fpga_lock);
     return status;
 }
 
@@ -437,10 +538,15 @@ static ssize_t ready_show(struct device *dev, struct device_attribute *attr, cha
 {
     u32 data;
     unsigned int REGISTER = FPGA_PORT_XCVR_READY;
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
 
-    mutex_lock(&fpga_data->fpga_lock);
-    data = ioread32(fpga_dev.data_base_addr + REGISTER);
-    mutex_unlock(&fpga_data->fpga_lock);
+	
+    mutex_lock(&driver_data->fpga_data->fpga_lock);
+    data = ioread32(driver_data->fpga_dev->data_base_addr + REGISTER);
+    mutex_unlock(&driver_data->fpga_data->fpga_lock);
     return sprintf(buf, "%d\n", (data >> 0) & 1U);
 }
 
@@ -474,10 +580,16 @@ static ssize_t cpld1_getreg_show(struct device *dev, struct device_attribute *at
 {
     // CPLD register is one byte
     uint8_t data;
-    struct i2c_client *client = fpga_data->cpld_i2c_clients[0];
-    data = i2c_smbus_read_byte_data(client, fpga_data->cpld1_read_addr);
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+    struct i2c_client *client = driver_data->fpga_data->cpld_i2c_clients[0];
+	
+    data = i2c_smbus_read_byte_data(client, driver_data->fpga_data->cpld1_read_addr);
     if(data < 0)
         return data;
+    printk("show %x\n",data);
     return sprintf(buf, "0x%2.2x\n", data);
 }
 
@@ -485,11 +597,18 @@ static ssize_t cpld1_getreg_store(struct device *dev, struct device_attribute *a
 {
     uint8_t addr;
     char *last;
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
+	
     addr = (uint8_t)strtoul(buf, &last, 16);
     if (addr == 0 && buf == last) {
         return -EINVAL;
     }
-    fpga_data->cpld1_read_addr = addr;
+    driver_data->fpga_data->cpld1_read_addr = addr;
+    printk("store %x\n",driver_data->fpga_data->cpld1_read_addr);
     return size;
 }
 
@@ -499,28 +618,43 @@ static ssize_t cpld1_scratch_show(struct device *dev, struct device_attribute *a
 {
     // CPLD register is one byte
     int value;
-    struct i2c_client *client = fpga_data->cpld_i2c_clients[0];
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+	
+    struct i2c_client *client = driver_data->fpga_data->cpld_i2c_clients[0];
+	if ( client == NULL ){
+		return 1;
+	}
+    printk("scratch show %x,addr %x\n",value,driver_data->fpga_data->cpld_i2c_clients[0]->addr);
 
-    value = i2c_smbus_read_byte_data(client, 0x01);
+    value = i2c_smbus_read_byte_data(client, CPLD_SCRATCH_REG);
     if(value < 0)
         return value;
+        printk("scratch show %x\n",value);
     return sprintf(buf, "0x%.2x\n", value);
 }
 
 static ssize_t cpld1_scratch_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
     // CPLD register is one byte
-    
     u8 value;
     ssize_t status;
-    struct i2c_client *client = fpga_data->cpld_i2c_clients[0];
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+    struct i2c_client *client = driver_data->fpga_data->cpld_i2c_clients[0];
 
     status = kstrtou8(buf, 0, &value);
     if(status != 0)
         return status;
-    status = i2c_smbus_write_byte_data(client, 0x01, value);
+        printk("scratch store %x,addr %x\n",value,driver_data->fpga_data->cpld_i2c_clients[0]->addr);
+    status = i2c_smbus_write_byte_data(client, CPLD_SCRATCH_REG, value);
     if(status == 0)
         status = size;
+            printk("scratch store value:status %x %x\n",value,status);
     return status;
 }
 struct device_attribute dev_attr_cpld1_scratch = __ATTR(scratch, 0600, cpld1_scratch_show, cpld1_scratch_store);
@@ -529,7 +663,11 @@ static ssize_t cpld1_setreg_store(struct device *dev, struct device_attribute *a
 {
 
     uint8_t addr, value;
-    struct i2c_client *client = fpga_data->cpld_i2c_clients[0];
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+    struct i2c_client *client = driver_data->fpga_data->cpld_i2c_clients[0];
     char *tok;
     char clone[size];
     char *pclone = clone;
@@ -554,9 +692,11 @@ static ssize_t cpld1_setreg_store(struct device *dev, struct device_attribute *a
     if (value == 0 && tok == last) {
         return -EINVAL;
     }
+    printk("cpld1 setreg store clint->addr :addr:value %x: %x:%x \n",driver_data->fpga_data->cpld_i2c_clients[0]->addr,addr,value);
     err = i2c_smbus_write_byte_data(client, addr, value);
     if (err < 0)
         return err;
+    printk("cpld1 setreg store size :addr:value %x: %x:%x \n",addr,value);
 
     return size;
 }
@@ -577,8 +717,13 @@ static ssize_t cpld2_getreg_show(struct device *dev, struct device_attribute *at
 {
     // CPLD register is one byte
     uint8_t data;
-    struct i2c_client *client = fpga_data->cpld_i2c_clients[1];
-    data = i2c_smbus_read_byte_data(client, fpga_data->cpld1_read_addr);
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+    struct i2c_client *client = driver_data->fpga_data->cpld_i2c_clients[1];
+	
+    data = i2c_smbus_read_byte_data(client, driver_data->fpga_data->cpld2_read_addr);
     if(data < 0)
         return data;
     return sprintf(buf, "0x%2.2x\n", data);
@@ -589,11 +734,16 @@ static ssize_t cpld2_getreg_store(struct device *dev, struct device_attribute *a
     // CPLD register is one byte
     uint8_t addr;
     char *last;
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
     addr = (uint8_t)strtoul(buf, &last, 16);
     if (addr == 0 && buf == last) {
         return -EINVAL;
     }
-    fpga_data->cpld2_read_addr = addr;
+    driver_data->fpga_data->cpld2_read_addr = addr;
     return size;
 }
 struct device_attribute dev_attr_cpld2_getreg = __ATTR(getreg, 0600, cpld2_getreg_show, cpld2_getreg_store);
@@ -602,9 +752,13 @@ static ssize_t cpld2_scratch_show(struct device *dev, struct device_attribute *a
 {
     // CPLD register is one byte
     int value;
-    struct i2c_client *client = fpga_data->cpld_i2c_clients[1];
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+    struct i2c_client *client = driver_data->fpga_data->cpld_i2c_clients[1];
 
-    value = i2c_smbus_read_byte_data(client, 0x01);
+    value = i2c_smbus_read_byte_data(client, CPLD_SCRATCH_REG);
     if(value < 0)
         return value;
     return sprintf(buf, "0x%.2x\n", value);
@@ -615,12 +769,16 @@ static ssize_t cpld2_scratch_store(struct device *dev, struct device_attribute *
     // CPLD register is one byte
     u8 value;
     ssize_t status;
-    struct i2c_client *client = fpga_data->cpld_i2c_clients[1];
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+    struct i2c_client *client = driver_data->fpga_data->cpld_i2c_clients[1];
 
     status = kstrtou8(buf, 0, &value);
     if(status != 0)
         return status;
-    status = i2c_smbus_write_byte_data(client, 0x01, value);
+    status = i2c_smbus_write_byte_data(client, CPLD_SCRATCH_REG, value);
     if(status == 0)
         status = size;
     return status;
@@ -630,7 +788,11 @@ struct device_attribute dev_attr_cpld2_scratch = __ATTR(scratch, 0600, cpld2_scr
 static ssize_t cpld2_setreg_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
     uint8_t addr, value;
-    struct i2c_client *client = fpga_data->cpld_i2c_clients[1];
+	struct kobject *kobj = (struct kobject *)dev;
+	struct device *parent_dev = container_of(kobj->parent, struct device, kobj);
+	struct platform_device *pdev = container_of(parent_dev, struct platform_device, dev);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+    struct i2c_client *client = driver_data->fpga_data->cpld_i2c_clients[1];
     char *tok;
     char clone[size];
     char *pclone = clone;
@@ -682,9 +844,9 @@ static ssize_t qsfp_modirq_show(struct device *dev, struct device_attribute *att
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_STATUS_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
-    data = ioread32(fpga_dev.data_base_addr + REGISTER);
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
+    data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return sprintf(buf, "%d\n", (data >> STAT_IRQ) & 1U);
 }
 DEVICE_ATTR_RO(qsfp_modirq);
@@ -696,9 +858,9 @@ static ssize_t qsfp_modprs_show(struct device *dev, struct device_attribute *att
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_STATUS_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
-    data = ioread32(fpga_dev.data_base_addr + REGISTER);
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
+    data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return sprintf(buf, "%d\n", (data >> STAT_PRESENT) & 1U);
 }
 DEVICE_ATTR_RO(qsfp_modprs);
@@ -710,9 +872,9 @@ static ssize_t sfp_txfault_show(struct device *dev, struct device_attribute *att
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_STATUS_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
-    data = ioread32(fpga_dev.data_base_addr + REGISTER);
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
+    data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return sprintf(buf, "%d\n", (data >> STAT_TXFAULT) & 1U);
 }
 DEVICE_ATTR_RO(sfp_txfault);
@@ -724,9 +886,9 @@ static ssize_t sfp_rxlos_show(struct device *dev, struct device_attribute *attr,
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_STATUS_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
-    data = ioread32(fpga_dev.data_base_addr + REGISTER);
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
+    data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return sprintf(buf, "%d\n", (data >> STAT_RXLOS) & 1U);
 }
 DEVICE_ATTR_RO(sfp_rxlos);
@@ -738,9 +900,9 @@ static ssize_t sfp_modabs_show(struct device *dev, struct device_attribute *attr
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_STATUS_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
-    data = ioread32(fpga_dev.data_base_addr + REGISTER);
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
+    data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return sprintf(buf, "%d\n", (data >> STAT_MODABS) & 1U);
 }
 DEVICE_ATTR_RO(sfp_modabs);
@@ -752,9 +914,9 @@ static ssize_t qsfp_lpmode_show(struct device *dev, struct device_attribute *att
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_CTRL_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
-    data = ioread32(fpga_dev.data_base_addr + REGISTER);
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
+    data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return sprintf(buf, "%d\n", (data >> CTRL_LPMOD) & 1U);
 }
 static ssize_t qsfp_lpmode_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
@@ -766,19 +928,19 @@ static ssize_t qsfp_lpmode_store(struct device *dev, struct device_attribute *at
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_CTRL_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
     status = kstrtol(buf, 0, &value);
     if (status == 0) {
         // if value is 0, disable the lpmode
-        data = ioread32(fpga_dev.data_base_addr + REGISTER);
+        data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
         if (!value)
             data = data & ~( (u32)0x1 << CTRL_LPMOD);
         else
             data = data | ((u32)0x1 << CTRL_LPMOD);
-        iowrite32(data, fpga_dev.data_base_addr + REGISTER);
+        iowrite32(data, dev_data->fpga_dev->data_base_addr + REGISTER);
         status = size;
     }
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return status;
 }
 DEVICE_ATTR_RW(qsfp_lpmode);
@@ -790,9 +952,9 @@ static ssize_t qsfp_reset_show(struct device *dev, struct device_attribute *attr
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_CTRL_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
-    data = ioread32(fpga_dev.data_base_addr + REGISTER);
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
+    data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return sprintf(buf, "%d\n", (data >> CTRL_RST) & 1U);
 }
 
@@ -805,19 +967,19 @@ static ssize_t qsfp_reset_store(struct device *dev, struct device_attribute *att
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_CTRL_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
     status = kstrtol(buf, 0, &value);
     if (status == 0) {
         // if value is 0, reset signal is low
-        data = ioread32(fpga_dev.data_base_addr + REGISTER);
+        data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
         if (!value)
             data = data & ~( (u32)0x1 << CTRL_RST);
         else
             data = data | ((u32)0x1 << CTRL_RST);
-        iowrite32(data, fpga_dev.data_base_addr + REGISTER);
+        iowrite32(data, dev_data->fpga_dev->data_base_addr + REGISTER);
         status = size;
     }
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return status;
 }
 DEVICE_ATTR_RW(qsfp_reset);
@@ -829,9 +991,9 @@ static ssize_t sfp_txdisable_show(struct device *dev, struct device_attribute *a
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_CTRL_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
-    data = ioread32(fpga_dev.data_base_addr + REGISTER);
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
+    data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return sprintf(buf, "%d\n", (data >> CTRL_TXDIS) & 1U);
 }
 static ssize_t sfp_txdisable_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
@@ -843,19 +1005,19 @@ static ssize_t sfp_txdisable_store(struct device *dev, struct device_attribute *
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_CTRL_BASE + (portid - 1) * 0x10;
 
-    mutex_lock(&fpga_data->fpga_lock);
+    mutex_lock(&dev_data->fpga_data->fpga_lock);
     status = kstrtol(buf, 0, &value);
     if (status == 0) {
         // check if value is 0 clear
-        data = ioread32(fpga_dev.data_base_addr + REGISTER);
+        data = ioread32(dev_data->fpga_dev->data_base_addr + REGISTER);
         if (!value)
             data = data & ~( (u32)0x1 << CTRL_TXDIS);
         else
             data = data | ((u32)0x1 << CTRL_TXDIS);
-        iowrite32(data, fpga_dev.data_base_addr + REGISTER);
+        iowrite32(data, dev_data->fpga_dev->data_base_addr + REGISTER);
         status = size;
     }
-    mutex_unlock(&fpga_data->fpga_lock);
+    mutex_unlock(&dev_data->fpga_data->fpga_lock);
     return status;
 }
 DEVICE_ATTR_RW(sfp_txdisable);
@@ -886,6 +1048,7 @@ static ssize_t port_led_mode_show(struct device *dev, struct device_attribute *a
 {
     // value can be "nomal", "test"
     int led_mode_1, led_mode_2;
+	struct cloverstone_dp_fpga_data *fpga_data = dev_get_drvdata(dev);
     struct i2c_client *cpld1 = fpga_data->cpld_i2c_clients[0];
     struct i2c_client *cpld2 = fpga_data->cpld_i2c_clients[1];
 
@@ -905,6 +1068,7 @@ static ssize_t port_led_mode_store(struct device *dev, struct device_attribute *
 {
     int status;
     u8 led_mode_1;
+	struct cloverstone_dp_fpga_data *fpga_data = dev_get_drvdata(dev);
     struct i2c_client *cpld1 = fpga_data->cpld_i2c_clients[0];
     struct i2c_client *cpld2 = fpga_data->cpld_i2c_clients[1];
 
@@ -933,7 +1097,7 @@ static ssize_t port_led_color_show(struct device *dev, struct device_attribute *
 {
     // value can be R/G/B/C/M/Y/W/OFF
     int led_color1, led_color2;
-
+	struct cloverstone_dp_fpga_data *fpga_data = dev_get_drvdata(dev);
     struct i2c_client *cpld1 = fpga_data->cpld_i2c_clients[0];
     struct i2c_client *cpld2 = fpga_data->cpld_i2c_clients[1];
 
@@ -956,7 +1120,7 @@ static ssize_t port_led_color_store(struct device *dev, struct device_attribute 
 {
     ssize_t status;
     u8 led_color;
-
+	struct cloverstone_dp_fpga_data *fpga_data = dev_get_drvdata(dev);
     struct i2c_client *cpld1 = fpga_data->cpld_i2c_clients[0];
     struct i2c_client *cpld2 = fpga_data->cpld_i2c_clients[1];
 
@@ -1003,10 +1167,11 @@ static struct attribute_group sff_led_test_grp = {
     .attrs = sff_led_test,
 };
 
-static struct device * silverstone_sff_init(int portid) {
+static struct device * cloverstone_dp_sff_init(struct platform_device *pdev, int portid) {
     struct sff_device_data *new_data;
     struct device *new_device;
-
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+	
     new_data = kzalloc(sizeof(*new_data), GFP_KERNEL);
     if (!new_data) {
         printk(KERN_ALERT "Cannot alloc sff device data @port%d", portid);
@@ -1015,297 +1180,448 @@ static struct device * silverstone_sff_init(int portid) {
     /* The QSFP port ID start from 1 */
     new_data->portid = portid + 1;
     new_data->port_type = fpga_i2c_bus_dev[portid].port_type;
-    new_device = device_create_with_groups(fpgafwclass, 
-                                           sff_dev, 
+	new_data->fpga_data = driver_data->fpga_data;
+	new_data->fpga_dev = driver_data->fpga_dev;
+	
+    new_device = device_create_with_groups(driver_data->fpga_data->fpgafwclass, 
+                                           driver_data->linecard->sff_dev, 
                                            MKDEV(0, 0), 
                                            new_data, 
                                            sff_attr_grps, 
                                            "%s", 
                                            fpga_i2c_bus_dev[portid].calling_name);
+	
     if (IS_ERR(new_device)) {
         printk(KERN_ALERT "Cannot create sff device @port%d", portid);
         kfree(new_data);
         return NULL;
     }
+	
+    printk(KERN_INFO "Create sff device @port%d", portid);
     return new_device;
 }
 
-
-static void silverstone_dev_release( struct device * dev)
-{
-    return;
-}
-
-static struct platform_device silverstone_dev = {
-    .name           = DRIVER_NAME,
-    .id             = -1,
-    .num_resources  = 0,
-    .dev = {
-        .release = silverstone_dev_release,
-    }
-};
-
-static int silverstone_drv_probe(struct platform_device *pdev)
-{
-    int ret = 0;
-    int portid_count;
-    struct i2c_adapter *cpld_bus_adap;
-    struct i2c_client *cpld1_client;
-    struct i2c_client *cpld2_client;
-
-    struct pci_dev *pci_dev = pci_get_device(PCI_VENDOR_ID_XILINX, 
-                                             FPGA_PCI_DEVICE_ID, 
-                                             NULL);
-    if (pci_dev){
-        fpga_pci_probe(pci_dev);
-        pci_dev_put(pci_dev);
-    } else {
-        ret = -ENODEV;
-        goto err_exit;
-    }
-
-    fpga_data = devm_kzalloc(&pdev->dev, sizeof(struct silverstone_fpga_data),
-                             GFP_KERNEL);
-
-    if (!fpga_data){
-        ret = -ENOMEM;
-        goto err_exit;
-    }
-
-    /* The device class need to be instantiated before this function called */
-    BUG_ON(fpgafwclass == NULL);
-
-    cpld_bus_adap = i2c_get_adapter(SWITCH_CPLD_ADAP_NUM);
-    if (!cpld_bus_adap){
-        dev_err(&pdev->dev, "cannot get switch board I2C adapter i2c-%d\n",
-                SWITCH_CPLD_ADAP_NUM);
-        ret = PTR_ERR(cpld_bus_adap);
-        goto err_exit;
-    }
-    cpld1_client = i2c_new_dummy(cpld_bus_adap, CPLD1_SLAVE_ADDR);
-    if (!cpld1_client){
-        dev_err(&pdev->dev, "cannot create i2c dummy device of CPLD1\n");
-        ret = -ENODEV;
-        goto err_free_adap;
-    }
-
-    cpld2_client = i2c_new_dummy(cpld_bus_adap, CPLD2_SLAVE_ADDR);
-    if (!cpld2_client){
-        dev_err(&pdev->dev, "cannot create i2c dummy device of CPLD2\n");
-        ret = ENODEV;
-        goto err_free_cli_clpd1;
-    }
-
-    fpga = kobject_create_and_add("FPGA", &pdev->dev.kobj);
-    if (!fpga) {
-        ret = -ENOMEM;
-        goto err_free_cli_clpd2;
-    }
-
-    ret = sysfs_create_group(fpga, &fpga_attr_grp);
-    if (ret != 0) {
-        printk(KERN_ERR "Cannot create FPGA sysfs attributes\n");
-        goto err_remove_fpga;
-    }
-
-    cpld1 = kobject_create_and_add("CPLD1", &pdev->dev.kobj);
-    if (!cpld1) {
-        ret = -ENOMEM;
-        goto err_remove_grp_fpga;
-    }
-    ret = sysfs_create_group(cpld1, &cpld1_attr_grp);
-    if (ret != 0) {
-        printk(KERN_ERR "Cannot create CPLD1 sysfs attributes\n");
-        goto err_remove_cpld1;
-    }
-
-    cpld2 = kobject_create_and_add("CPLD2", &pdev->dev.kobj);
-    if (!cpld2) {
-        ret = -ENOMEM;
-        goto err_remove_grp_cpld1;
-    }
-    ret = sysfs_create_group(cpld2, &cpld2_attr_grp);
-    if (ret != 0) {
-        printk(KERN_ERR "Cannot create CPLD2 sysfs attributes\n");
-        goto err_remove_cpld2;
-    }
-
-    sff_dev = device_create(fpgafwclass, NULL, MKDEV(0, 0), NULL, "sff_device");
-    if (IS_ERR(sff_dev)) {
-        ret = PTR_ERR(sff_dev);
-        goto err_remove_grp_cpld2;
-    }
-
-    ret = sysfs_create_group(&sff_dev->kobj, &sff_led_test_grp);
-    if (ret != 0) {
-        goto err_remove_sff;
-    }
-
-    ret = sysfs_create_link(&pdev->dev.kobj, &sff_dev->kobj, "SFF");
-    if (ret != 0) {
-        goto err_remove_grp_sff;
-    }
-
-    /* Init SFF devices */
-    for (portid_count = 0; portid_count < SFF_PORT_TOTAL; portid_count++) {
-        fpga_data->sff_devices[portid_count] = silverstone_sff_init(portid_count);
-    }
-
-    // Set default read address to VERSION
-    fpga_data->fpga_read_addr = fpga_dev.data_base_addr + FPGA_VERSION;
-    fpga_data->cpld1_read_addr = 0x00;
-    fpga_data->cpld2_read_addr = 0x00;
-    fpga_data->cpld_i2c_clients[0] = cpld1_client;
-    fpga_data->cpld_i2c_clients[1] = cpld2_client;
-    mutex_init(&fpga_data->fpga_lock);
-
-return 0;
-
-err_remove_grp_sff:
-    sysfs_remove_group(&sff_dev->kobj, &sff_led_test_grp);
-err_remove_sff:
-    device_destroy(fpgafwclass, MKDEV(0, 0));
-err_remove_grp_cpld2:
-    sysfs_remove_group(cpld2, &cpld2_attr_grp);
-err_remove_cpld2:
-    kobject_put(cpld2);
-err_remove_grp_cpld1:
-    sysfs_remove_group(cpld1, &cpld1_attr_grp);
-err_remove_cpld1:
-    kobject_put(cpld1);
-err_remove_grp_fpga:
-    sysfs_remove_group(fpga, &fpga_attr_grp);
-err_remove_fpga:
-    kobject_put(fpga);
-err_free_cli_clpd2:
-    i2c_unregister_device(cpld2_client);
-err_free_cli_clpd1:
-    i2c_unregister_device(cpld1_client);
-err_free_adap:
-    i2c_put_adapter(cpld_bus_adap);
-err_exit:
-    return ret;
-
-}
-
-static int silverstone_drv_remove(struct platform_device *pdev)
-{
-    int portid_count;
-    struct sff_device_data *rem_data;
-    struct i2c_client *rem_cli;
-
-    rem_cli = fpga_data->cpld_i2c_clients[0];
-    if(rem_cli)
-        i2c_unregister_device(rem_cli);
-
-    rem_cli = fpga_data->cpld_i2c_clients[1];
-    if(rem_cli)
-    i2c_unregister_device(rem_cli);
-
-    for (portid_count = 0; portid_count < SFF_PORT_TOTAL; portid_count++) {
-        if (fpga_data->sff_devices[portid_count] != NULL) {
-            rem_data = dev_get_drvdata(fpga_data->sff_devices[portid_count]);
-            device_unregister(fpga_data->sff_devices[portid_count]);
-            put_device(fpga_data->sff_devices[portid_count]);
-            kfree(rem_data);
-        }
-    }
-
-    sysfs_remove_group(fpga, &fpga_attr_grp);
-    sysfs_remove_group(cpld1, &cpld1_attr_grp);
-    sysfs_remove_group(cpld2, &cpld2_attr_grp);
-    sysfs_remove_group(&sff_dev->kobj, &sff_led_test_grp);
-    kobject_put(fpga);
-    kobject_put(cpld1);
-    kobject_put(cpld2);
-    device_destroy(fpgafwclass, MKDEV(0, 0));
-    fpga_pci_remove();
-    return 0;
-}
-
 /* move this on top of platform_probe() */
-static int fpga_pci_probe(struct pci_dev *pdev)
+static int fpga_pci_probe(struct platform_device *pdev, resource_size_t data_mmio_start, resource_size_t data_mmio_end)
 {
     int err;
     struct device *dev = &pdev->dev;
     uint32_t fpga_version;
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
 
     /* Skip the reqions request and mmap the resource */ 
     /* bar0: data mmio region */
-    fpga_dev.data_mmio_start = pci_resource_start(pdev, FPGA_PCI_BAR_NUM);
-    fpga_dev.data_mmio_len = pci_resource_len(pdev, FPGA_PCI_BAR_NUM);
-    fpga_dev.data_base_addr = ioremap_nocache(fpga_dev.data_mmio_start, 
-                                                fpga_dev.data_mmio_len);
-    if (!fpga_dev.data_base_addr) {
+	if ( pdev == NULL ){
+		printk("bad bad\n");
+		return 1;
+	}
+	if ( driver_data == NULL ){
+		printk("bad driver_data\n");
+		return 1;
+	}
+	fpga_dev = devm_kzalloc(&pdev->dev, sizeof(struct fpga_device),
+	                         GFP_KERNEL);
+	if (!fpga_dev){
+	    return -ENOMEM;
+	}
+	
+	//set fpga_dev to driver_data member
+	driver_data->fpga_dev = fpga_dev;  
+    fpga_dev->data_mmio_start = data_mmio_start;
+    fpga_dev->data_mmio_len = data_mmio_end - data_mmio_start;
+    fpga_dev->data_base_addr = ioremap_nocache(fpga_dev->data_mmio_start, 
+                                                fpga_dev->data_mmio_len);
+
+    if (!fpga_dev->data_base_addr) {
         dev_err(dev, "cannot iomap region of size %lu\n",
-                (unsigned long)fpga_dev.data_mmio_len);
-        err = PTR_ERR(fpga_dev.data_base_addr);
+                (unsigned long)fpga_dev->data_mmio_len);
+        err = PTR_ERR(fpga_dev->data_base_addr);
         goto err_exit;
     }
     dev_info(dev, "data_mmio iomap base = 0x%lx \n",
-             (unsigned long)fpga_dev.data_base_addr);
+             (unsigned long)fpga_dev->data_base_addr);
     dev_info(dev, "data_mmio_start = 0x%lx data_mmio_len = %lu\n",
-             (unsigned long)fpga_dev.data_mmio_start,
-             (unsigned long)fpga_dev.data_mmio_len);
+             (unsigned long)fpga_dev->data_mmio_start,
+             (unsigned long)fpga_dev->data_mmio_len);
 
     printk(KERN_INFO "FPGA PCIe driver probe OK.\n");
     printk(KERN_INFO "FPGA ioremap registers of size %lu\n", 
-            (unsigned long)fpga_dev.data_mmio_len);
+            (unsigned long)fpga_dev->data_mmio_len);
     printk(KERN_INFO "FPGA Virtual BAR %d at %8.8lx - %8.8lx\n", 
             FPGA_PCI_BAR_NUM,
-            (unsigned long)fpga_dev.data_base_addr,
-            (unsigned long)(fpga_dev.data_base_addr + fpga_dev.data_mmio_len));
+            (unsigned long)fpga_dev->data_base_addr,
+            (unsigned long)(fpga_dev->data_base_addr + fpga_dev->data_mmio_len));
     printk(KERN_INFO "");
-    fpga_version = ioread32(fpga_dev.data_base_addr);
+    fpga_version = ioread32(fpga_dev->data_base_addr);
     printk(KERN_INFO "FPGA VERSION : %8.8x\n", fpga_version);
 
-    fpgafwclass = class_create(THIS_MODULE, CLASS_NAME);
-    if (IS_ERR(fpgafwclass)) {
+    driver_data->fpga_data->fpgafwclass = class_create(THIS_MODULE, fpga_data->fpgafwclass_name);
+    if (IS_ERR(fpga_data->fpgafwclass)) {
         printk(KERN_ALERT "Failed to register device class\n");
-        err = PTR_ERR(fpgafwclass);
+        err = PTR_ERR(driver_data->fpga_data->fpgafwclass);
         goto mem_unmap;
     }
     return 0;
 
 mem_unmap:
-    iounmap(fpga_dev.data_base_addr);
+    iounmap(fpga_dev->data_base_addr);
 err_exit:
     return err;
 }
 
-static void fpga_pci_remove(void)
+
+static void fpga_pci_remove(struct platform_device *pdev)
 {
-    iounmap(fpga_dev.data_base_addr);
-    class_unregister(fpgafwclass);
-    class_destroy(fpgafwclass);
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
+    iounmap(driver_data->fpga_dev->data_base_addr);
+    class_unregister(driver_data->fpga_data->fpgafwclass);
+	class_destroy(driver_data->fpga_data->fpgafwclass);
+	
 };
 
-
-static struct platform_driver silverstone_drv = {
-    .probe  = silverstone_drv_probe,
-    .remove = __exit_p(silverstone_drv_remove),
-    .driver = {
-        .name   = DRIVER_NAME,
-    },
-};
-
-int silverstone_init(void)
+static void cloverstone_dp_dev_release( struct device * dev)
 {
-    platform_device_register(&silverstone_dev);
-    platform_driver_register(&silverstone_drv);
+    return;
+}
+
+static int cloverstone_dp_drv_probe(struct platform_device *pdev)
+{
+    int ret = 0;
+    int portid_count;
+	struct resource *res;
+    struct i2c_adapter *cpld1_bus_adap;
+	struct i2c_adapter *cpld2_bus_adap;
+    struct i2c_client *cpld1_client;
+    struct i2c_client *cpld2_client;
+	
+	struct drv_data *driver_data;
+	
+	//struct pci_dev *pci_dev = pci_get_device(PCI_VENDOR_ID_XILINX, 
+	                                  //           FPGA_PCI_DEVICE_ID, 
+	                                  //           NULL);
+	//pci_dev_put(pci_dev);
+	//printk("board %x:%x.%x\n",pci_dev->bus->number,(((pci_dev->devfn) >> 3 ) && 0x1f),((pci_dev->devfn) && 0x07));
+	
+	driver_data = devm_kzalloc(&pdev->dev, sizeof(struct drv_data),
+	                         GFP_KERNEL);
+	if (!driver_data){
+	    return -ENOMEM;
+	}
+	printk(" devm_kzalloc drv_data \n");
+	
+	fpga_data = devm_kzalloc(&pdev->dev, sizeof(struct cloverstone_dp_fpga_data),
+	                         GFP_KERNEL);
+	if (!fpga_data){
+	    return -ENOMEM;
+	}
+	printk(" devm_kzalloc cloverstone_dp_fpga_data \n");
+	
+	linecard = devm_kzalloc(&pdev->dev, sizeof(struct line_card),
+	                         GFP_KERNEL);
+	if (!linecard){
+	    return -ENOMEM;
+	}
+	printk(" devm_kzalloc line_card \n");
+	
+	platform_set_drvdata(pdev, driver_data); 
+	//set driver_data member fpga_data
+	driver_data->fpga_data = fpga_data;  
+	//set driver_data member linecard
+	driver_data->linecard = linecard;    
+	
+	sprintf(fpga_data->fpgafwclass_name, "%s%d", CLASS_NAME, fpga_init_index);
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+
+	if (!res) {
+		return -EINVAL;
+	}else{
+		fpga_pci_probe(pdev, res->start, res->end);
+	}
+	
+	if ( fpga_init_index == 0 ){
+		cpld1_bus_adap = i2c_get_adapter(SWITCH_LC1_CPLD1_ADAP_NUM);
+		if (!cpld1_bus_adap){
+	        dev_err(&pdev->dev, "cannot get switch board I2C adapter i2c-%d\n",
+	                SWITCH_LC1_CPLD1_ADAP_NUM);
+	        ret = PTR_ERR(cpld1_bus_adap);
+	        goto err_exit;
+	    }
+		cpld2_bus_adap = i2c_get_adapter(SWITCH_LC1_CPLD2_ADAP_NUM);
+	    if (!cpld2_bus_adap){
+	        dev_err(&pdev->dev, "cannot get switch board I2C adapter i2c-%d\n",
+	                SWITCH_LC1_CPLD2_ADAP_NUM);
+	        ret = PTR_ERR(cpld2_bus_adap);
+	        goto err_free_adap1;
+	    }
+	}else{
+		cpld1_bus_adap = i2c_get_adapter(SWITCH_LC2_CPLD1_ADAP_NUM);
+		if (!cpld1_bus_adap){
+	        dev_err(&pdev->dev, "cannot get switch board I2C adapter i2c-%d\n",
+	                SWITCH_LC2_CPLD1_ADAP_NUM);
+	        ret = PTR_ERR(cpld1_bus_adap);
+	        goto err_exit;
+	    }
+		cpld2_bus_adap = i2c_get_adapter(SWITCH_LC2_CPLD2_ADAP_NUM);
+	    if (!cpld2_bus_adap){
+	        dev_err(&pdev->dev, "cannot get switch board I2C adapter i2c-%d\n",
+	                SWITCH_LC2_CPLD2_ADAP_NUM);
+	        ret = PTR_ERR(cpld2_bus_adap);
+	        goto err_free_adap1;
+	    }
+	}
+	
+    /* The device class need to be instantiated before this function called */
+    BUG_ON(fpga_data->fpgafwclass == NULL);
+/*
+    cpld1_bus_adap = i2c_get_adapter(SWITCH_LC1_CPLD1_ADAP_NUM);
+	if (!cpld1_bus_adap){
+        dev_err(&pdev->dev, "cannot get switch board I2C adapter i2c-%d\n",
+                SWITCH_LC1_CPLD1_ADAP_NUM);
+        ret = PTR_ERR(cpld1_bus_adap);
+        goto err_exit;
+    }
+	cpld2_bus_adap = i2c_get_adapter(SWITCH_CPLD2_ADAP_NUM);
+    if (!cpld2_bus_adap){
+        dev_err(&pdev->dev, "cannot get switch board I2C adapter i2c-%d\n",
+                SWITCH_CPLD2_ADAP_NUM);
+        ret = PTR_ERR(cpld2_bus_adap);
+        goto err_free_adap1;
+    }
+*/
+	if (fpga_init_index == 0){
+		printk("i2c_get_adapter(SWITCH_LC1_CPLD1_ADAP_NUM)\n");
+	}else{
+		printk("i2c_get_adapter(SWITCH_LC2_CPLD1_ADAP_NUM)\n");
+	}
+	
+    cpld1_client = i2c_new_dummy(cpld1_bus_adap, CPLD1_SLAVE_ADDR);
+    if (!cpld1_client){
+        dev_err(&pdev->dev, "cannot create i2c dummy device of CPLD1\n");
+        ret = -ENODEV;
+        goto err_free_adap2;
+    }
+    printk("cpld1_client\n");
+	
+	if (fpga_init_index == 0){
+		printk("i2c_get_adapter(SWITCH_LC1_CPLD2_ADAP_NUM)\n");
+	}else{
+		printk("i2c_get_adapter(SWITCH_LC2_CPLD2_ADAP_NUM)\n");
+	}
+	
+    cpld2_client = i2c_new_dummy(cpld2_bus_adap, CPLD2_SLAVE_ADDR);
+    if (!cpld2_client){
+        dev_err(&pdev->dev, "cannot create i2c dummy device of CPLD2\n");
+        ret = ENODEV;
+        goto err_free_cli_cpld1;
+    }
+    printk("cpld2_client\n");
+
+    linecard->fpga = kobject_create_and_add("FPGA", &pdev->dev.kobj);
+    if (!linecard->fpga) {
+        ret = -ENOMEM;
+        goto err_free_cli_cpld2;
+    }
+    printk("Kobject FPGA\n");
+
+    ret = sysfs_create_group(linecard->fpga, &fpga_attr_grp);
+    if (ret != 0) {
+        printk(KERN_ERR "Cannot create FPGA sysfs attributes\n");
+        goto err_remove_fpga;
+    }
+    printk("sysfs_create_group fpga\n");
+
+    linecard->cpld1 = kobject_create_and_add("CPLD1", &pdev->dev.kobj);
+    if (!linecard->cpld1) {
+        ret = -ENOMEM;
+        goto err_remove_grp_fpga;
+    }
+    printk("kobject_create_and_add cpld 1\n");
+	
+    ret = sysfs_create_group(linecard->cpld1, &cpld1_attr_grp);
+    if (ret != 0) {
+        printk(KERN_ERR "Cannot create CPLD1 sysfs attributes\n");
+        goto err_remove_cpld1;
+    }
+    printk("sysfs_create_group cpld1\n");
+    linecard->cpld2 = kobject_create_and_add("CPLD2", &pdev->dev.kobj);
+    if (!linecard->cpld2) {
+        ret = -ENOMEM;
+        goto err_remove_grp_cpld1;
+    }
+    printk("kobject_create_and_add cpld 2\n");
+    ret = sysfs_create_group(linecard->cpld2, &cpld2_attr_grp);
+    if (ret != 0) {
+        printk(KERN_ERR "Cannot create CPLD2 sysfs attributes\n");
+        goto err_remove_cpld2;
+    }
+    printk("sysfs_create_group cpld2\n");
+
+    linecard->sff_dev = device_create(fpga_data->fpgafwclass, NULL, MKDEV(0, 0), NULL, "sff_device");
+    if (IS_ERR(linecard->sff_dev)) {
+        ret = PTR_ERR(linecard->sff_dev);
+        goto err_remove_grp_cpld2;
+    }
+    printk("dev create sff_device\n");
+
+	// add set linecard->sff_dev's driver data here to transfer data to sff_led_test_grp
+	dev_set_drvdata(linecard->sff_dev, fpga_data);
+	
+    ret = sysfs_create_group(&linecard->sff_dev->kobj, &sff_led_test_grp);
+    if (ret != 0) {
+        goto err_remove_sff;
+    }
+    printk("sysfs_create_group sff_led_test_grp\n");
+
+    ret = sysfs_create_link(&pdev->dev.kobj, &linecard->sff_dev->kobj, "SFF");
+    if (ret != 0) {
+        goto err_remove_grp_sff;
+    }
+    printk("create link SFF\n");
+
+    /* Init SFF devices */
+    for (portid_count = 0; portid_count < SFF_PORT_TOTAL; portid_count++) {
+        fpga_data->sff_devices[portid_count] = cloverstone_dp_sff_init(pdev, portid_count);
+    }
+
+    // Set default read address to VERSION
+    fpga_data->fpga_read_addr = fpga_dev->data_base_addr + FPGA_VERSION;
+    fpga_data->cpld1_read_addr = 0x00;
+    fpga_data->cpld2_read_addr = 0x00;
+    fpga_data->cpld_i2c_clients[0] = cpld1_client;
+    fpga_data->cpld_i2c_clients[1] = cpld2_client;
+    fpga_data->cpld_i2c_adapters[0] = cpld1_bus_adap;
+    fpga_data->cpld_i2c_adapters[1] = cpld2_bus_adap;
+    printk("fpga_data i2c 0/1 %x / %x\n",fpga_data->cpld_i2c_clients[0]->addr,fpga_data->cpld_i2c_clients[1]->addr);
+    mutex_init(&fpga_data->fpga_lock);
+	fpga_init_index += 1;
+	printk("fpga_init_index = %x\n", fpga_init_index);
+	
+	printk("dp_drv probe done!\n");
+	return 0;
+	
+err_remove_grp_sff:
+    sysfs_remove_group(&linecard->sff_dev->kobj, &sff_led_test_grp);
+err_remove_sff:
+    device_destroy(fpga_data->fpgafwclass, MKDEV(0, 0));
+err_remove_grp_cpld2:
+    sysfs_remove_group(linecard->cpld2, &cpld2_attr_grp);
+err_remove_cpld2:
+    kobject_put(linecard->cpld2);
+err_remove_grp_cpld1:
+    sysfs_remove_group(linecard->cpld1, &cpld1_attr_grp);
+err_remove_cpld1:
+    kobject_put(linecard->cpld1);
+err_remove_grp_fpga:
+    sysfs_remove_group(linecard->fpga, &fpga_attr_grp);
+err_remove_fpga:
+    kobject_put(linecard->fpga);
+err_free_cli_cpld2:
+    i2c_unregister_device(cpld2_client);
+err_free_cli_cpld1:
+    i2c_unregister_device(cpld1_client);
+err_free_adap2:
+    i2c_put_adapter(cpld2_bus_adap);	
+err_free_adap1:
+    i2c_put_adapter(cpld1_bus_adap);
+err_exit:
+    return ret;
+
+}
+
+static int cloverstone_dp_drv_remove(struct platform_device *pdev)
+{
+    int portid_count;
+	int i = 0;
+    struct sff_device_data *rem_data;
+    struct i2c_client *rem_cli;
+	struct drv_data *driver_data = platform_get_drvdata(pdev);
+
+    for (portid_count = 0; portid_count < SFF_PORT_TOTAL; portid_count++) {
+        if (driver_data->fpga_data->sff_devices[portid_count] != NULL) {
+            rem_data = dev_get_drvdata(driver_data->fpga_data->sff_devices[portid_count]);
+            device_unregister(driver_data->fpga_data->sff_devices[portid_count]);
+            put_device(driver_data->fpga_data->sff_devices[portid_count]);
+            kfree(rem_data);
+        }
+    }
+	
+	sysfs_remove_link(&pdev->dev.kobj, "SFF");
+    sysfs_remove_group(&(driver_data->linecard->sff_dev)->kobj, &sff_led_test_grp);
+	device_destroy(driver_data->fpga_data->fpgafwclass, MKDEV(0, 0));
+    sysfs_remove_group(driver_data->linecard->fpga, &fpga_attr_grp);
+    sysfs_remove_group(driver_data->linecard->cpld1, &cpld1_attr_grp);
+    sysfs_remove_group(driver_data->linecard->cpld2, &cpld2_attr_grp);
+    kobject_put(driver_data->linecard->fpga);
+    kobject_put(driver_data->linecard->cpld1);
+    kobject_put(driver_data->linecard->cpld2);
+	rem_cli = driver_data->fpga_data->cpld_i2c_clients[0];
+    if(rem_cli)
+        i2c_unregister_device(rem_cli);
+
+    rem_cli = driver_data->fpga_data->cpld_i2c_clients[1];
+    if(rem_cli)
+    	i2c_unregister_device(rem_cli);
+    i2c_put_adapter(driver_data->fpga_data->cpld_i2c_adapters[0]);
+    i2c_put_adapter(driver_data->fpga_data->cpld_i2c_adapters[1]);
+    fpga_pci_remove(pdev);
     return 0;
 }
 
-void silverstone_exit(void)
+// static const struct pci_device_id pci_class[] = {
+	// {  PCI_VDEVICE(XILINX, FPGA_PCI_DEVICE_ID) },
+	// {0, }
+// };
+
+// MODULE_DEVICE_TABLE(pci, pci_class);
+
+// static struct pci_driver cls_pci_driver = {
+	// .name = DRIVER_NAME,
+	// .id_table = pci_class,
+	// .probe = fpga_pci_probe,
+	// .remove = fpga_pci_remove,
+// };
+
+
+
+//module_pci_driver(cls_pci_driver);
+static struct platform_driver cloverstone_dp_drv1 = {
+	    .probe  = cloverstone_dp_drv_probe,
+	    .remove = __exit_p(cloverstone_dp_drv_remove),
+	    .driver = {
+	        .name   = DRIVER_NAME1,
+	    },
+};
+static struct platform_driver cloverstone_dp_drv2 = {
+		.probe	= cloverstone_dp_drv_probe,
+		.remove = __exit_p(cloverstone_dp_drv_remove),
+		.driver = {
+			.name	= DRIVER_NAME2,
+		},
+};
+
+
+
+int cloverstone_dp_init(void)
 {
-    platform_driver_unregister(&silverstone_drv);
-    platform_device_unregister(&silverstone_dev);
+    //pci_register_driver(&cls_pci_driver);
+	platform_driver_register(&cloverstone_dp_drv1);
+    platform_driver_register(&cloverstone_dp_drv2);
+    return 0;
 }
 
-module_init(silverstone_init);
-module_exit(silverstone_exit);
+void cloverstone_dp_exit(void)
+{	
+	//pci_unregister_driver(&cls_pci_driver);
+    platform_driver_unregister(&cloverstone_dp_drv1);
+    platform_driver_unregister(&cloverstone_dp_drv2);
+}
+
+module_init(cloverstone_dp_init);
+module_exit(cloverstone_dp_exit);
 
 MODULE_AUTHOR("Celestica Inc.");
-MODULE_DESCRIPTION("Silverstone Sysfs Nodes for Diagnostic Tool");
+MODULE_DESCRIPTION("cloverstone_dp Sysfs Nodes for Diagnostic Tool");
 MODULE_VERSION(MOD_VERSION);
 MODULE_LICENSE("GPL");

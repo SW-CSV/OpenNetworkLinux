@@ -14,25 +14,29 @@ class OnlPlatform_x86_64_cel_cloverstone_dp_r0(OnlPlatformCelestica,
 #        sfp_quantity = 48
 #        sfp_i2c_start_bus = 2
         print("Initialize and Install the driver here")
-#        self.insmod("i2c-ocores.ko")
-#        self.insmod("cls-switchboard.ko")
-#        self.insmod("switchboard-diag.ko")
-#        self.insmod("i2c-cls.ko")
-#        self.insmod("optoe.ko")
-#        self.insmod("mc24lc64t.ko")
+        self.insmod("cls-i2c-ocores.ko")
+        self.insmod("cls-switchboard.ko")
+        self.insmod("switchboard-diag.ko")
+        self.insmod("optoe.ko")
+        self.insmod("optoe_device.ko")
 
-        #self.insmod("baseboard.ko")
-#        self.insmod("cpld_b.ko")
-        #self.insmod("xcvr-cls.koo")
-
+        self.insmod("cmm_fpga.ko")
+        self.insmod("mc24lc64t.ko")
+        self.insmod("mc24lc64t_device.ko")
+        self.insmod("cpld_b.ko")
+        self.insmod("xcvr-cls.ko")
+        
+        os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_msghandler.ko")
         os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_devintf.ko")
         os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_si.ko")
         os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_ssif.ko")
+        os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_poweroff.ko")
+        os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_watchdog.ko")
 
         # ###### new configuration for SDK support ########
-        os.system("insmod /lib/modules/`uname -r`/kernel/net/core/pktgen.ko")
-        os.system("insmod /lib/modules/`uname -r`/kernel/net/core/drop_monitor.ko")
-        os.system("insmod /lib/modules/`uname -r`/kernel/net/ipv4/tcp_probe.ko")
+        #os.system("insmod /lib/modules/`uname -r`/kernel/net/core/pktgen.ko")
+        #os.system("insmod /lib/modules/`uname -r`/kernel/net/core/drop_monitor.ko")
+        #os.system("insmod /lib/modules/`uname -r`/kernel/net/ipv4/tcp_probe.ko")
 
         # eeprom driver
 #        self.new_i2c_device('24lc64t', 0x56, 1)

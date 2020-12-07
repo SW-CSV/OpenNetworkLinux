@@ -48,9 +48,9 @@
 #include <linux/jiffies.h>
 
 #define MOD_VERSION "1.0.0"
-#define FPGA_PCI_DEVICE_ID      0x7011 /*0x7021*/
+#define FPGA_PCI_DEVICE_ID      0x7021 /*0x7021*/
 #define FPGA_PCI_BAR_NUM        0
-#define SWITCH_CPLD_ADAP_NUM    4
+#define SWITCH_CPLD_ADAP_NUM    6
 
 #define CLASS_NAME "cls_fpga"
 #define DRIVER_NAME "cmm_fpga"
@@ -96,7 +96,9 @@ PORT XCVR       0x00004000 - 0x00004FFF.
 #define FPGA_VERSION_MN_MSK     0x00ff
 #define FPGA_SCRATCH            0x0004
 #define FPGA_PORT_XCVR_READY    0x000c
-
+#define FPGA_TYPE_ADDR		    0x404
+#define FPGA_LC_TYPE  		    0x5a
+#define MMIO_BAR           		0
 #define I2C_MASTER_CH_1             1
 #define I2C_MASTER_CH_2             2
 #define I2C_MASTER_CH_3             3
@@ -352,6 +354,7 @@ static int cmm_fpga_drv_probe(struct platform_device *pdev)
     struct pci_dev *pci_dev = pci_get_device(PCI_VENDOR_ID_XILINX, 
                                              FPGA_PCI_DEVICE_ID, 
                                              NULL);
+	
     if (pci_dev){
         fpga_pci_probe(pci_dev);
         pci_dev_put(pci_dev);
@@ -415,7 +418,30 @@ static int fpga_pci_probe(struct pci_dev *pdev)
     int err;
     struct device *dev = &pdev->dev;
     uint32_t fpga_version;
+	uint32_t fpga_type;
+	void __iomem *base_addr;
 
+	err = pci_enable_device(pdev);
+	if (err){
+		dev_err(dev,  "Failed to enable PCI device\n");
+		goto err_exit;
+	}
+
+	/* Check for valid MMIO address */
+	base_addr = pci_iomap(pdev, MMIO_BAR, 0);
+	if (!base_addr) {
+		dev_err(dev,  "Failed to map PCI device mem\n");
+		err = -ENODEV;
+		goto err_disable_device;
+	}
+
+	fpga_type = ioread32(base_addr + FPGA_TYPE_ADDR);
+	printk("fpga Type:0x%8.8x\n",fpga_type);
+	if (fpga_type == FPGA_LC_TYPE) {
+		err = 0;
+		goto err_exit;
+	}
+	
     /* Skip the reqions request and mmap the resource */ 
     /* bar0: data mmio region */
     fpga_dev.data_mmio_start = pci_resource_start(pdev, FPGA_PCI_BAR_NUM);
@@ -455,6 +481,8 @@ static int fpga_pci_probe(struct pci_dev *pdev)
 
 mem_unmap:
     iounmap(fpga_dev.data_base_addr);
+err_disable_device:
+	pci_disable_device(pdev);
 err_exit:
     return err;
 }

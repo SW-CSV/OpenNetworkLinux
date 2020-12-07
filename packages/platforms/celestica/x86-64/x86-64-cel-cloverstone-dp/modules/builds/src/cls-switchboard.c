@@ -72,11 +72,13 @@ struct switchbrd_priv {
 	unsigned long base;
 	int num_i2c_bus;
 	const char *i2c_devname;	
-	const char *xcvr_devname;	
+	const char *xcvr_devname;
+	const char *fpga_devname;
 	struct platform_device **i2cbuses_pdev;
 	struct platform_device *regio_pdev;
 	struct platform_device *spiflash_pdev;
 	struct platform_device *xcvr_pdev;
+	struct platform_device *fpga_pdev;
 };
 
 /* I2C bus speed param */
@@ -367,6 +369,14 @@ static struct resource xcvr_res[] = {
 		.flags = IORESOURCE_MEM,},
 };
 
+/* Resource IOMEM for front panel XCVR */
+static struct resource fpga_res[] = {
+	{       
+		.start = 0x0, .end = 0x421F,
+		.flags = IORESOURCE_MEM,},
+};
+
+
 static struct i2c_bus_config i2c_bus_configs[] = {
 	{
 		.id = 1,
@@ -535,9 +545,12 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	struct switchbrd_priv *priv;
 	struct platform_device **i2cbuses_pdev;
 	//struct platform_device *regio_pdev;
+	struct platform_device *fpga_pdev;
 	struct platform_device *xcvr_pdev;
 	uint32_t fpga_type;
-	
+    printk("bus: %x \n",dev->bus->number);
+	/*if(dev->bus->number != 0xc)
+        return 0;*/
 	err = pci_enable_device(dev);
 	if (err){
 		dev_err(&dev->dev,  "Failed to enable PCI device\n");
@@ -570,6 +583,10 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	dev_dbg(&dev->dev, "BAR%d res: 0x%lx-0x%llx\n", MMIO_BAR, 
 		rstart, pci_resource_end(dev, MMIO_BAR));
 
+	printk("BAR%d res: 0x%lx-0x%llx\n", MMIO_BAR, 
+		rstart, pci_resource_end(dev, MMIO_BAR));
+
+
 	priv = devm_kzalloc(&dev->dev, 
 				sizeof(struct switchbrd_priv), GFP_KERNEL);
 	if (!priv){
@@ -584,8 +601,23 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 				num_i2c_bus * sizeof(struct platform_device*), 
 				GFP_KERNEL);
 
+	printk("after BAR%d res: 0x%lx-0x%llx\n", MMIO_BAR, 
+		rstart, pci_resource_end(dev, MMIO_BAR));
+	
+	printk("before num_i2c_bus = %x,fpga_res start/end %x/%x,restart=%x\n",num_i2c_bus,fpga_res[0].start ,fpga_res[0].end,rstart );
+	fpga_res[0].start = 0x0;
+    fpga_res[0].end = 0x421F;
+	fpga_res[0].start += rstart;
+	fpga_res[0].end += rstart;
+    printk("num_i2c_bus = %x,fpga_res start/end %x/%x,restart=%x\n",num_i2c_bus,fpga_res[0].start ,fpga_res[0].end,rstart );
+	
+    printk("before num_i2c_bus = %x,xcvr_res start/end %x/%x,restart=%x\n",num_i2c_bus,xcvr_res[0].start ,xcvr_res[0].end,rstart );
+    xcvr_res[0].start = 0x4000;
+    xcvr_res[0].end = 0x421F;
 	xcvr_res[0].start += rstart;
 	xcvr_res[0].end += rstart;
+    printk("num_i2c_bus = %x,xcvr_res start/end %x/%x,restart=%x\n",num_i2c_bus,xcvr_res[0].start ,xcvr_res[0].end,rstart );
+	
 
 #if 0
 	reg_io_res[0].start += rstart;
@@ -609,14 +641,31 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		case 0:
 			priv->i2c_devname = "ocores-i2c-cls0";
 			priv->xcvr_devname = "cls-xcvr0";
+			priv->fpga_devname = "linecard0";
 			break;
 		case 1:
 			priv->i2c_devname = "ocores-i2c-cls1";
 			priv->xcvr_devname = "cls-xcvr1";
+			priv->fpga_devname = "linecard1";
 			break;
 		default:
 			break; 
 	}	
+	fpga_pdev = platform_device_register_resndata(
+											NULL,
+											priv->fpga_devname, 
+											-1,
+											fpga_res,
+											ARRAY_SIZE(fpga_res),
+											NULL,
+											0);
+	if (IS_ERR(fpga_pdev)) {
+		dev_err(&dev->dev, "Failed to register fpga node\n");
+		err = PTR_ERR(fpga_pdev);
+		goto err_unmap;
+	}
+	printk("register fpga node\n");
+	
 	xcvr_pdev = platform_device_register_resndata(
 											NULL,
 											priv->xcvr_devname, 
@@ -628,14 +677,23 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	if (IS_ERR(xcvr_pdev)) {
 		dev_err(&dev->dev, "Failed to register xcvr node\n");
 		err = PTR_ERR(xcvr_pdev);
-		goto err_unmap;
+		goto err_unregister_fpga_dev;
 	}
-
+	printk("register xcvr node\n");
+    
+    if (fpga_init_index == 1) {
+        for(i=0;i<num_i2c_bus;i++)
+        {
+	        i2c_bus_configs[i].res[0].start = 0x800+(i*0x20);
+	        i2c_bus_configs[i].res[0].end = 0x81F+(i*0x20);
+        }
+    
+    }
 	for(i = 0; i < num_i2c_bus; i++){
 
 		i2c_bus_configs[i].res[0].start += rstart;
 		i2c_bus_configs[i].res[0].end += rstart;
-	
+		printk("id:i2c_bus_configs[%d].res[0].start/end=%x:%x\n",i,i2c_bus_configs[i].id,i2c_bus_configs[i].res[0].start,i2c_bus_configs[i].res[0].end);
 		if (fpga_init_index == 1) {
 			i2c_bus_configs[i].id = I2C_BUSID_OFS + i;
 			if (i < 5) {
@@ -670,11 +728,17 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		}
 
 		dev_dbg(&dev->dev, "i2c-bus.%d: 0x%llx - 0x%llx\n",
-			i2c_bus_configs[i].id, 
-			i2c_bus_configs[i].res[0].start, 
-			i2c_bus_configs[i].res[0].end);
+		i2c_bus_configs[i].id, 
+		i2c_bus_configs[i].res[0].start, 
+		i2c_bus_configs[i].res[0].end);
 
-	i2cbuses_pdev[i] = platform_device_register_resndata(
+            
+		printk("i2c-bus.%d: 0x%llx - 0x%llx\n",
+		i2c_bus_configs[i].id, 
+		i2c_bus_configs[i].res[0].start, 
+		i2c_bus_configs[i].res[0].end);
+
+		i2cbuses_pdev[i] = platform_device_register_resndata(
 								&dev->dev, 
 								priv->i2c_devname, 
 								i2c_bus_configs[i].id,
@@ -696,8 +760,9 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	priv->i2cbuses_pdev = i2cbuses_pdev;
 	//priv->regio_pdev = regio_pdev;
 	priv->xcvr_pdev = xcvr_pdev;
+	priv->fpga_pdev = fpga_pdev;
 	fpga_init_index += 1;
-	
+	printk("base_addr=%x,fpga_init_index = %x\n",base_addr,fpga_init_index);
 	return 0;
 
 err_unregister_ocore:
@@ -709,6 +774,8 @@ err_unregister_ocore:
 	platform_device_unregister(xcvr_pdev);
 //err_unregister_regio:
 	//platform_device_unregister(regio_pdev);
+err_unregister_fpga_dev:
+	platform_device_unregister(fpga_pdev);
 err_unmap:
 	pci_iounmap(dev, base_addr);
 err_disable_device:
@@ -727,6 +794,7 @@ static void cls_fpga_remove(struct pci_dev *dev)
 			platform_device_unregister(priv->i2cbuses_pdev[i]);
 	}
 	platform_device_unregister(priv->xcvr_pdev);
+	platform_device_unregister(priv->fpga_pdev);
 	//platform_device_unregister(priv->regio_pdev);
 	pci_iounmap(dev, priv->iomem);
 	pci_disable_device(dev);
