@@ -1,16 +1,25 @@
-variables:
-  platform: x86-64-cel-cloverstone-dp-r0
-  install: /lib/platform-config/${platform}/onl
+variables: 
+  PLATFORM: x86-64-cel-cloverstone-dp 
+  ARCH: amd64
+  TOOLCHAIN: x86_64-linux-gnu
+  REVISION: r0
+  install: /lib/platform-config/${PLATFORM}-${REVISION}/onl
 
 common:
-  version: 0.1.0
-  arch: amd64
+  version: 1.0.0
+  arch: $ARCH
   copyright: Copyright 2013, 2014, 2015 Big Switch Networks
   maintainer: support@bigswitch.com
+  support: opennetworklinux@googlegroups.com
   comment: dummy package for ONLP on Celestica cloverstone-dp
 packages:
-  - name: onlp-${platform}
-    summary: ONLP Package for the ${platform} platform.
+  - name: onlp-${PLATFORM}-${REVISION}
+    summary: ONLP Package for the ${PLATFORM}-${REVISION} platform.
+    platform-config: True
 
-    changelog: initial version
+    files:
+      builds/lib/$BUILD_DIR/$TOOLCHAIN/bin/libonlp-${PLATFORM}.so : ${install}/lib/
+      builds/onlpdump/$BUILD_DIR/$TOOLCHAIN/bin/onlpdump : ${install}/bin/
+
+    changelog:  initial version
 

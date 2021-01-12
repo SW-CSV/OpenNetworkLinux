@@ -491,9 +491,9 @@ class Base:
         return 0
 
 GRUB_TPL = """\
-serial %(serial)s
-terminal_input serial
-terminal_output serial
+#serial %(serial)s
+#terminal_input serial
+#terminal_output serial
 set timeout=5
 
 # Always boot the saved_entry value
